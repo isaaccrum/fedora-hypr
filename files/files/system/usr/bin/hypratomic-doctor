@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+printf 'Hypratomic Phase 1 system check\n'
+printf '================================\n\n'
+
+failures=0
+warnings=0
+
+check_cmd() {
+    local cmd="$1"
+    local label="${2:-$1}"
+    if command -v "$cmd" >/dev/null 2>&1; then
+        printf '[ OK ] %-30s %s\n' "$label" "$(command -v "$cmd")"
+    else
+        printf '[FAIL] %-30s missing\n' "$label"
+        failures=$((failures + 1))
+    fi
+}
+
+check_optional() {
+    local cmd="$1"
+    local label="${2:-$1}"
+    if command -v "$cmd" >/dev/null 2>&1; then
+        printf '[ OK ] %-30s %s\n' "$label" "$(command -v "$cmd")"
+    else
+        printf '[WARN] %-30s missing\n' "$label"
+        warnings=$((warnings + 1))
+    fi
+}
+
+check_cmd rpm-ostree 'rpm-ostree'
+check_cmd Hyprland 'Hyprland'
+check_cmd quickshell 'Quickshell'
+check_cmd foot 'Foot terminal'
+check_cmd distrobox 'Distrobox'
+check_cmd waybar 'Waybar fallback'
+check_optional hyprctl 'hyprctl'
+check_optional kitty 'Kitty fallback terminal'
+check_optional nm-applet 'NetworkManager applet'
+
+printf '\nDeployment:\n'
+if command -v rpm-ostree >/dev/null 2>&1; then
+    rpm-ostree status || true
+fi
+
+printf '\nSession:\n'
+printf '  XDG_CURRENT_DESKTOP=%s\n' "${XDG_CURRENT_DESKTOP:-<unset>}"
+printf '  XDG_SESSION_TYPE=%s\n' "${XDG_SESSION_TYPE:-<unset>}"
+printf '  HYPRLAND_INSTANCE_SIGNATURE=%s\n' "${HYPRLAND_INSTANCE_SIGNATURE:-<unset>}"
+
+printf '\nResult: %d failure(s), %d warning(s).\n' "$failures" "$warnings"
+if (( failures > 0 )); then
+    exit 1
+fi

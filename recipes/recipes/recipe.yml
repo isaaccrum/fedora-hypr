@@ -1,0 +1,35 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
+
+name: hypratomic
+description: Fedora Atomic + Wayblue Hyprland, prepared for an Omarchy-inspired desktop.
+
+# Wayblue currently supports the `latest` tag for end-user rebases.
+# As of 2026-09-18 this resolves to its Fedora 44 Hyprland image.
+base-image: ghcr.io/wayblueorg/hyprland
+image-version: latest
+
+modules:
+  # Keep our system-owned files in the immutable image. BlueBuild moves
+  # image-time /etc content to /usr/etc as appropriate for Atomic systems.
+  - type: files
+    files:
+      - source: system
+        destination: /
+
+  # Phase 1 intentionally adds only a small set of packages. Wayblue already
+  # supplies Hyprland, Waybar, portals, display-manager integration, Distrobox,
+  # and the other pieces required for a functional compositor session.
+  - type: dnf
+    install:
+      packages:
+        - quickshell
+        - foot
+        - btop
+        - fastfetch
+        - fzf
+        - ripgrep
+        - fd-find
+
+  # Installs the policy/key material required to consume our signed image.
+  - type: signing

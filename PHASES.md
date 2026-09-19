@@ -1,0 +1,74 @@
+# Hypratomic roadmap
+
+## Phase 1 — Proven bootable base (this repository)
+
+Goal: prove the custom image is boring and recoverable.
+
+- Base on Wayblue Hyprland.
+- Add Quickshell without activating it.
+- Add only a small CLI/terminal baseline.
+- Keep Wayblue Waybar/configuration as the working fallback.
+- Build and sign the image.
+- Rebase a test machine.
+- Verify two successful boots.
+- Verify `rpm-ostree rollback` before customizing the desktop.
+- Run `hypratomic-doctor`.
+
+Exit criterion: you would be comfortable using this image for a week even if
+we stopped the project here.
+
+## Phase 2 — Hyprland behavior
+
+Goal: make the desktop *behave* like Omarchy while keeping the shell simple.
+
+- Add split Hyprland configuration.
+- Port/adapt keybindings and workspace behavior.
+- Add terminal/file-manager/browser variables.
+- Add screenshot/clipboard bindings.
+- Add idle/lock behavior.
+- Keep monitor configuration in a separate user-owned file.
+- Keep Waybar as the bar.
+- Add an activation/deactivation helper with backups.
+
+Exit criterion: Hyprland behavior is stable and can be disabled in one command.
+
+## Phase 3 — Omarchy-inspired visual layer
+
+Goal: reproduce the visual language without importing Arch assumptions.
+
+- Fonts and Nerd Fonts.
+- Cursor/icon/GTK choices.
+- Wallpaper handling.
+- Foot theme.
+- Hyprland colors, gaps, borders, animations.
+- Central palette file and generated application theme fragments.
+- One initial theme before supporting multiple themes.
+
+Exit criterion: screenshots should look recognizably Omarchy-inspired while
+remaining native to Fedora.
+
+## Phase 4 — Quickshell / Quattro-style shell
+
+Goal: replace the collection of small desktop daemons with a coherent shell.
+
+- Status bar.
+- Launcher.
+- Notifications.
+- OSD.
+- Power/session UI.
+- Polkit surface if appropriate.
+- Network/Bluetooth controls.
+- Theme integration.
+- Only then disable Waybar and any replaced services.
+
+Exit criterion: Quickshell is the normal daily shell and Waybar remains an
+available emergency fallback.
+
+## Phase 5 — Applications and polished distribution
+
+- Flatpak policy and default applications.
+- Toolbx/Distrobox development containers.
+- Optional local development tooling.
+- Hardware-specific variants only if actually needed.
+- ISO generation.
+- Upgrade policy and release tags.
