@@ -1,0 +1,5 @@
+-- Loaded last. Do not edit the image-owned defaults.
+-- Remove an existing binding before replacing it, for example:
+-- hl.unbind("SUPER + RETURN")
+-- hl.bind("SUPER + RETURN", hl.dsp.exec_cmd("foot --app-id=personal-terminal"))
+-- hl.config({ input = { kb_layout = "us" } })

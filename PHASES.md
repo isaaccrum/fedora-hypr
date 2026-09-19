@@ -2,6 +2,10 @@
 
 ## Phase 1 — Proven bootable base (this repository)
 
+Status: complete. The custom image, Hyprland session, rebase, and rpm-ostree
+rollback have been tested on real hardware. Foot is the standard terminal;
+Kitty native-Wayland troubleshooting is out of scope.
+
 Goal: prove the custom image is boring and recoverable.
 
 - Base on Wayblue Hyprland.
@@ -19,6 +23,10 @@ we stopped the project here.
 
 ## Phase 2 — Hyprland behavior
 
+Status: implemented in the repository; image build and hardware acceptance remain
+required before declaring this phase complete. See
+[the validation checklist](docs/phase2-validation.md).
+
 Goal: make the desktop *behave* like Omarchy while keeping the shell simple.
 
 - Add split Hyprland configuration.
@@ -29,6 +37,10 @@ Goal: make the desktop *behave* like Omarchy while keeping the shell simple.
 - Keep monitor configuration in a separate user-owned file.
 - Keep Waybar as the bar.
 - Add an activation/deactivation helper with backups.
+
+Implementation: modular Hyprlang/Lua profiles, separate user overrides,
+`hypratomic-activate` / `hypratomic-restore`, Wayblue session integration with
+Waybar, and isolated recovery tests. Quickshell remains unactivated.
 
 Exit criterion: Hyprland behavior is stable and can be disabled in one command.
 

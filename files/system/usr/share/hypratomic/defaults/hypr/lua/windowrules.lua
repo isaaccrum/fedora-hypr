@@ -1,0 +1,2 @@
+-- Deliberately empty: add only rules demonstrated to be necessary.
+-- Per-user rules belong in user.lua.

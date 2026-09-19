@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+printf 'Hypratomic system check\n'
+printf '================================\n\n'
+
+failures=0
+warnings=0
+
+check_cmd() {
+    local cmd="$1"
+    local label="${2:-$1}"
+    if command -v "$cmd" >/dev/null 2>&1; then
+        printf '[ OK ] %-30s %s\n' "$label" "$(command -v "$cmd")"
+    else
+        printf '[FAIL] %-30s missing\n' "$label"
+        failures=$((failures + 1))
+    fi
+}
+
+check_optional() {
+    local cmd="$1"
+    local label="${2:-$1}"
+    if command -v "$cmd" >/dev/null 2>&1; then
+        printf '[ OK ] %-30s %s\n' "$label" "$(command -v "$cmd")"
+    else
+        printf '[WARN] %-30s missing\n' "$label"
+        warnings=$((warnings + 1))
+    fi
+}
+
+check_cmd rpm-ostree 'rpm-ostree'
+if command -v Hyprland >/dev/null 2>&1; then
+    check_cmd Hyprland 'Hyprland'
+else
+    check_cmd hyprland 'Hyprland'
+fi
+check_optional quickshell 'Quickshell (not activated)'
+check_cmd foot 'Foot terminal'
+check_cmd distrobox 'Distrobox'
+check_cmd waybar 'Waybar fallback'
+check_optional hyprctl 'hyprctl'
+check_cmd wofi 'Application launcher'
+check_cmd thunar 'File manager'
+check_cmd cliphist 'Clipboard history'
+check_cmd wl-copy 'Clipboard copy'
+check_cmd wl-paste 'Clipboard watcher'
+check_cmd grim 'Screenshot capture'
+check_cmd slurp 'Screenshot selection'
+check_cmd swayidle 'Idle/lock integration'
+check_cmd swaylock 'Screen lock'
+check_optional nm-applet 'NetworkManager applet'
+
+printf '\nDeployment:\n'
+if command -v rpm-ostree >/dev/null 2>&1; then
+    rpm-ostree status || true
+fi
+
+printf '\nSession:\n'
+printf '  XDG_CURRENT_DESKTOP=%s\n' "${XDG_CURRENT_DESKTOP:-<unset>}"
+printf '  XDG_SESSION_TYPE=%s\n' "${XDG_SESSION_TYPE:-<unset>}"
+printf '  HYPRLAND_INSTANCE_SIGNATURE=%s\n' "${HYPRLAND_INSTANCE_SIGNATURE:-<unset>}"
+
+printf '\nConfiguration:\n'
+printf '  Overrides: %s/hypratomic\n' "${XDG_CONFIG_HOME:-$HOME/.config}"
+printf '  Recovery:  %s/hypratomic\n' "${XDG_STATE_HOME:-$HOME/.local/state}"
+if [[ -f "$HOME/.config/hypr/.hypratomic-profile" ]]; then
+    printf '  Hypratomic configuration is installed.\n'
+else
+    printf '  Hypratomic configuration is not activated.\n'
+fi
+if [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] && command -v hyprctl >/dev/null 2>&1; then
+    if errors="$(hyprctl configerrors 2>&1)"; then
+        if [[ -n "${errors//[[:space:]]/}" && "$errors" != 'ok' ]]; then
+            printf '[FAIL] Hyprland configuration errors:\n%s\n' "$errors"
+            failures=$((failures + 1))
+        fi
+    else
+        printf '[WARN] Could not query Hyprland configuration errors: %s\n' "$errors"
+        warnings=$((warnings + 1))
+    fi
+fi
+
+printf '\nResult: %d failure(s), %d warning(s).\n' "$failures" "$warnings"
+if (( failures > 0 )); then
+    exit 1
+fi

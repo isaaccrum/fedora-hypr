@@ -17,8 +17,7 @@ modules:
       - source: system
         destination: /
 
-  # Phase 1 intentionally adds only a small set of packages. Wayblue already
-  # supplies Hyprland, Waybar, portals, display-manager integration, Distrobox,
+  # Wayblue supplies Hyprland, Waybar, portals, display-manager integration, Distrobox,
   # and the other pieces required for a functional compositor session.
   - type: dnf
     install:
@@ -30,6 +29,8 @@ modules:
         - fzf
         - ripgrep
         - fd-find
+        - python3 # transactional activation/restoration (standard library only)
+        - cliphist # clipboard history; wl-clipboard/wofi come from Wayblue
 
     remove:
       packages:
@@ -48,5 +49,9 @@ modules:
           # - org.mozilla.firefox
           # - org.gnome.Loupe
       - scope: user # Also add Flathub user repo, but no user packages
+
+  - type: script
+    scripts:
+      - validate-hypratomic.sh
 
   - type: signing # this sets up the proper policy & signing files for signed images to work fully

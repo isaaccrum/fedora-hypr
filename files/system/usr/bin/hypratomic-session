@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Invoked once by Hyprland, never by image installation or activation.
+# Match Wayblue's session integration without starting another compositor shell.
+: "${XDG_RUNTIME_DIR:?A graphical user session is required}"
+exec 9>"$XDG_RUNTIME_DIR/hypratomic-session.lock"
+flock -n 9 || exit 0
+uid="$(id -u)"
+
+start_once() {
+    local process="$1"
+    shift
+    if ! pgrep -u "$uid" -x "$process" >/dev/null; then
+        "$@" 9>&- &
+    fi
+}
+
+# A wallet failure must not prevent the bar, polkit agent, or idle lock starting.
+dbus-update-activation-environment --systemd --all || printf 'Could not import session environment\n' >&2
+/usr/bin/gnome-keyring-daemon --start --components=secrets || printf 'Could not start keyring\n' >&2
+/usr/libexec/pam_kwallet_init || printf 'Could not initialize wallet\n' >&2
+start_once waybar waybar
+start_once xfce-polkit /usr/libexec/xfce-polkit
+start_once nm-applet nm-applet
+# Includes lock-on-idle, before-sleep, loginctl lock-session, and DPMS handling.
+start_once swayidle swayidle -w -C /usr/share/swayidle/config
+
+# Text and image watchers have distinct commands. Re-entry must not duplicate them.
+for kind in text image; do
+    if ! pgrep -u "$uid" -f "^wl-paste --type $kind --watch cliphist store$" >/dev/null; then
+        wl-paste --type "$kind" --watch cliphist store 9>&- &
+    fi
+done

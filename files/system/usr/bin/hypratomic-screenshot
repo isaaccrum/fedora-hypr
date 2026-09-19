@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+region="$(slurp)" || exit 0
+[[ -n "$region" ]] || exit 0
+: "${XDG_RUNTIME_DIR:?A graphical user session is required}"
+capture="$(mktemp "$XDG_RUNTIME_DIR/hypratomic-screenshot.XXXXXX")"
+trap 'rm -f -- "$capture"' EXIT
+grim -g "$region" "$capture"
+wl-copy --type image/png < "$capture"

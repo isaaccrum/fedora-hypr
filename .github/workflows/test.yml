@@ -1,0 +1,19 @@
+name: Configuration tests
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  configuration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check shell syntax
+        run: |
+          for script in files/system/usr/bin/hypratomic-* files/scripts/*.sh; do
+            bash -n "$script"
+          done
+      - name: Test isolated configuration transactions
+        run: python3 -m unittest discover -s tests -v
