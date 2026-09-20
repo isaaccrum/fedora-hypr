@@ -119,6 +119,8 @@ The session helper retains Wayblue's D-Bus environment, keyring, wallet, polkit,
 network applet, Waybar, and `/usr/share/swayidle/config` behavior. Existing matching
 daemons are not started again. Wayblue's idle policy controls locking, display
 power, and suspend. Notification/portal activation remains with the base image.
+The recipe explicitly installs `swayidle`, `swaylock`, and `gnome-keyring` for
+this helper; their presence is not assumed from the base image.
 
 ## Image installation and signing
 

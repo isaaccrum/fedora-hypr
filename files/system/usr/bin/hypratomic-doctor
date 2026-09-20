@@ -49,6 +49,7 @@ check_cmd grim 'Screenshot capture'
 check_cmd slurp 'Screenshot selection'
 check_cmd swayidle 'Idle/lock integration'
 check_cmd swaylock 'Screen lock'
+check_cmd gnome-keyring-daemon 'Secret service keyring'
 check_optional nm-applet 'NetworkManager applet'
 
 printf '\nDeployment:\n'

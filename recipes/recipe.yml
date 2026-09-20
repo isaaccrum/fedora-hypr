@@ -17,8 +17,8 @@ modules:
       - source: system
         destination: /
 
-  # Wayblue supplies Hyprland, Waybar, portals, display-manager integration, Distrobox,
-  # and the other pieces required for a functional compositor session.
+  # Keep Wayblue's compositor/session integration. Explicitly install the idle,
+  # lock and keyring tools used by hypratomic-session; the base may omit them.
   - type: dnf
     install:
       packages:
@@ -31,6 +31,9 @@ modules:
         - fd-find
         - python3 # transactional activation/restoration (standard library only)
         - cliphist # clipboard history; wl-clipboard/wofi come from Wayblue
+        - swayidle
+        - swaylock
+        - gnome-keyring # provides /usr/bin/gnome-keyring-daemon
 
     remove:
       packages:
