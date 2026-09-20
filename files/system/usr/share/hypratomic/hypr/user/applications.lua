@@ -1,3 +1,3 @@
 -- Optional overrides loaded before keybindings. Foot remains the default.
 -- hypratomic.browser = "flatpak run com.vivaldi.Vivaldi"
--- hypratomic.fileManager = "thunar"
+-- hypratomic.fileManager = hypratomic.terminal .. " -e yazi"

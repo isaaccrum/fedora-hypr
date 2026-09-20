@@ -2,8 +2,8 @@
 
 A BlueBuild Fedora Atomic image based on Wayblue Hyprland, with an
 Omarchy-inspired keyboard workflow and a recoverable desktop configuration.
-Foot is the standard terminal. Waybar remains the active bar; Quickshell is
-installed for future work but is not started.
+Foot is the standard terminal; Yazi is the default file manager. Waybar remains
+the active bar; Quickshell is installed for future work but is not started.
 
 Phase 1 builds, boots, rebases, and OS rollback have been tested on hardware.
 See [PHASES.md](PHASES.md) for milestones and the remaining desktop acceptance
@@ -13,8 +13,8 @@ checks. Kitty native-Wayland troubleshooting is outside this project's scope.
 
 ```bash
 python3 -m unittest discover -s tests -v
-bluebuild generate ./recipes/recipe.yml -o Containerfile
-bluebuild build ./recipes/recipe.yml
+bluebuild validate recipes/recipe.yml
+bluebuild build --build-driver docker recipes/recipe.yml
 ```
 
 BlueBuild installs `files/system/` into the image root. The build checks helper
@@ -23,11 +23,15 @@ permissions, required desktop commands, and the configuration with the image's
 they exercise recovery without launching or modifying the current desktop.
 
 The recipe follows `ghcr.io/wayblueorg/hyprland:latest`, so its Fedora and Hyprland
-versions can change with upstream. Defaults support Wayblue's Hyprlang (`.conf`)
-and Lua (`.lua`) configurations. The presence of the base's
-`/usr/share/hyprland/hyprland.lua` selects Lua; otherwise helpers select Hyprlang.
-The build and activation both validate the selected configuration. This is a
-compatibility bridge, not an automatic conversion of personal overrides.
+versions can change with upstream. Phase 2a uses upstream Hyprland Lua
+configuration and APIs. We follow current upstream formats and keep changes to
+Wayblue minimal, rather than pinning old versions to retain removed formats.
+The build and activation validate the profile with the installed compositor.
+Build validation runs as an unprivileged user in a temporary home.
+
+Yazi is installed from the `lihaohong/yazi` COPR listed in
+[Yazi's Fedora instructions](https://yazi-rs.github.io/docs/installation/#fedoracentos-stream-9rhel-9).
+The recipe removes that repository after installation; image rebuilds supply updates.
 
 ## Activate the desktop
 
@@ -41,25 +45,28 @@ hypratomic-bootstrap
 
 Bootstrap creates only missing files under `${XDG_CONFIG_HOME:-$HOME/.config}/hypratomic/`:
 
-- `applications.conf` or `.lua`: application overrides, loaded before bindings.
-- `monitors.conf` or `.lua`: machine-specific displays and scaling.
-- `user.conf` or `.lua`: final local overrides and additional bindings.
+- `applications.lua`: application overrides, loaded before bindings.
+- `monitors.lua`: machine-specific displays and scaling.
+- `user.lua`: final local overrides and additional bindings.
 
-Edit the format selected by bootstrap. Defaults use automatic monitor discovery;
+Edit these `.lua` files. Defaults use automatic monitor discovery;
 transfer any needed monitor layout and keyboard settings from your working
 configuration before activation. Existing files and old Phase 1 staging folders
 are preserved. General overrides are loaded last, but replacing a binding requires
-an explicit `unbind` / `hl.unbind` first; the generated file includes an example.
+an explicit `hl.unbind` first; the generated file includes an example.
 
 ```bash
 hypratomic-activate
 ```
 
-Activation validates dependencies and the staged configuration, backs up the
-entire previous Hyprland directory, then installs a small entry point loading
-image-owned modules from `/usr/share/hypratomic/defaults/hypr/`. It does not start
-services or explicitly reload Hyprland. A running compositor may notice file
-changes; activate from a TTY after logging out for the most predictable change.
+Activation checks dependencies, backs up the entire previous Hyprland directory
+before creating overrides or changing the active configuration, validates a staged
+configuration, then installs a small entry point loading image-owned modules from
+`/usr/share/hypratomic/hypr/`. A backup or validation failure leaves the existing
+configuration in place. Neither deployment nor login activates this profile.
+Activation does not start services or explicitly reload Hyprland. A running
+compositor may notice file changes; activate from a TTY after logging out for
+the most predictable change.
 Log in again to start the complete session.
 
 Wayblue's launcher reads `~/.config/hypr/` explicitly, so that entry point stays
@@ -76,21 +83,34 @@ hypratomic-restore
 ```
 
 Then log out and back in. Restoration needs no compositor or graphical session.
-It reinstates the saved directory or symlink, or removes the managed entry point
-if no user configuration originally existed so Wayblue's system default is used.
+It reinstates the most recent activation cycle's saved directory or symlink, or
+removes the managed entry point if no user configuration originally existed so
+Wayblue's system default is used.
 The outgoing configuration is archived rather than discarded.
 
 Backups and the active recovery record live under
 `${XDG_STATE_HOME:-$HOME/.local/state}/hypratomic/`. Repeated activation preserves
-the original recovery point. Interrupted swaps are rolled back on the next helper
-invocation. A top-level symlink's target contents are also snapshotted for manual
-recovery; normal restoration reinstates the original symlink without overwriting
-its external target. Preserve this state directory until recovery is no longer needed.
+the original recovery point without creating another backup. After restoration,
+the next activation saves a new recovery point; restore uses that latest cycle,
+not an older backup or an outgoing archive. Interrupted swaps are rolled back on
+the next helper invocation. A top-level symlink's target contents are also
+snapshotted for manual recovery; normal restoration reinstates the original
+symlink without overwriting its external target. Preserve this state directory until recovery is no longer needed.
 
-Image updates refresh managed defaults without replacing overrides. If upstream
-switches configuration formats, restore and reactivate, then port personal settings
-to the new format before logging in. OS rollback does not restore files in `$HOME`;
-use the configuration restoration command separately.
+Image updates refresh managed defaults without replacing user override files.
+Previously activated Lua loaders keep working through a directory alias from
+`/usr/share/hypratomic/defaults/hypr/lua/` to the current managed modules. This
+preserves the existing recovery point and requires no automatic reactivation.
+Port legacy `.conf` overrides to Lua manually; old files are preserved but not
+loaded. Restoration preserves legacy backups exactly, even if the current
+compositor no longer understands their syntax. OS rollback does not restore
+files in `$HOME`; use configuration restoration separately.
+
+The managed modules are `hyprland.lua`, `applications.lua`, `environment.lua`,
+`monitors.lua`, `input.lua`, `autostart.lua`, `keybinds.lua`,
+`look-and-feel.lua`, `workspaces.lua`, `windowrules.lua`, and `user.lua`.
+Application overrides load before bindings; monitor settings stay user-owned;
+`user.lua` loads last. No shared module names a contributor's monitor.
 
 ## Keyboard workflow
 
@@ -98,7 +118,7 @@ use the configuration restoration command separately.
 |---|---|
 | Super+Return | Foot |
 | Super+Shift+Return or Super+Shift+B | Vivaldi Flatpak |
-| Super+Shift+F | Thunar |
+| Super+Shift+F | Yazi in Foot |
 | Super+Space | Wofi application launcher |
 | Super+W | Close focused window |
 | Super+F / Super+T / Super+J | Fullscreen / floating / toggle split |

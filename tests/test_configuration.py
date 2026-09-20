@@ -47,7 +47,7 @@ class ConfigurationTests(unittest.TestCase):
     def test_directory_round_trip_and_outgoing_archive(self):
         self.original()
         self.config.run('activate')
-        self.assertFalse((self.config.active / 'hyprland.lua').exists())
+        self.assertFalse((self.config.active / 'hyprland.conf').exists())
         record = self.config.read_record()
         (self.config.active / 'personal-note').write_text('keep this')
         self.config.run('restore')
@@ -102,14 +102,14 @@ class ConfigurationTests(unittest.TestCase):
 
     def test_bootstrap_preserves_user_files_and_old_staging(self):
         self.config.run('bootstrap')
-        override = self.config.user / 'user.conf'
-        override.write_text('# personal override\n')
+        override = self.config.user / 'user.lua'
+        override.write_text('-- personal override\n')
         (self.config.user / 'hypr').mkdir()
         (self.config.user / 'hypr/README.md').write_text('Phase 1 staging')
         self.config.run('bootstrap')
         self.config.run('activate')
         self.config.run('restore')
-        self.assertEqual(override.read_text(), '# personal override\n')
+        self.assertEqual(override.read_text(), '-- personal override\n')
         self.assertEqual((self.config.user / 'hypr/README.md').read_text(), 'Phase 1 staging')
 
     def test_invalid_configuration_does_not_replace_original(self):
@@ -228,19 +228,73 @@ class ConfigurationTests(unittest.TestCase):
         self.config.record = self.config.state / 'active.json'
         self.config.pending = self.config.state / 'pending.json'
         self.config.run('activate')
-        self.assertTrue((self.home / '.config/hypr/hyprland.conf').exists())
-        self.assertTrue((self.config.user / 'monitors.conf').exists())
-        self.assertIn(str(self.config.user), (self.config.active / 'hyprland.conf').read_text())
+        self.assertTrue((self.home / '.config/hypr/hyprland.lua').exists())
+        self.assertTrue((self.config.user / 'monitors.lua').exists())
+        self.assertIn(str(self.config.user), (self.config.active / 'hyprland.lua').read_text())
 
-    def test_lua_profile_does_not_leave_conf_entry_point(self):
+    def test_lua_profile_replaces_conf_entry_point_and_restores_it(self):
         self.original()
-        self.config.format = 'lua'
         self.config.run('activate')
-        self.assertTrue((self.config.active / 'hyprland.lua').exists())
         self.assertFalse((self.config.active / 'hyprland.conf').exists())
+        self.assertTrue((self.config.active / 'hyprland.lua').exists())
         self.assertTrue((self.config.user / 'monitors.lua').exists())
         self.config.run('restore')
-        self.assertTrue((self.config.active / 'hyprland.conf').exists())
+        self.assertEqual((self.config.active / 'hyprland.lua').read_text(), '-- known good lua\n')
+
+    def test_restore_uses_latest_activation_cycle(self):
+        self.original()
+        self.config.run('activate')
+        first = self.config.read_record()['backup']
+        self.config.run('restore')
+        (self.config.active / 'hyprland.conf').write_text('new working setup\n')
+        self.config.run('activate')
+        self.assertNotEqual(self.config.read_record()['backup'], first)
+        self.config.run('restore')
+        self.assertEqual((self.config.active / 'hyprland.conf').read_text(), 'new working setup\n')
+        self.assertEqual((Path(first) / 'original/hyprland.conf').read_text(), 'known good conf\n')
+
+    def test_failed_backup_leaves_configuration_and_overrides_untouched(self):
+        self.original()
+        with patch.object(MODULE, 'copy_entry', side_effect=OSError('backup failed')):
+            with self.assertRaisesRegex(OSError, 'backup failed'):
+                self.config.run('activate')
+        self.assertEqual((self.config.active / 'hyprland.conf').read_text(), 'known good conf\n')
+        self.assertFalse(self.config.user.exists())
+        self.assertFalse(self.config.record.exists())
+
+    def test_backup_exists_before_validation(self):
+        self.original()
+        def validate(_path):
+            backups = list((self.config.state / 'backups').glob('*/original/hyprland.conf'))
+            self.assertEqual(len(backups), 1)
+            self.assertEqual(backups[0].read_text(), 'known good conf\n')
+        self.verify.side_effect = validate
+        self.config.run('activate')
+
+    def test_loader_uses_upstream_lua_format(self):
+        usr = self.home / 'usr'
+        sample = usr / 'share/hyprland/hyprland.lua'
+        sample.parent.mkdir(parents=True)
+        sample.write_text('-- upstream Lua default')
+        config = MODULE.Configuration(self.home, self.home / '.config',
+                                      self.home / '.local/state', usr)
+        loader = config.loader(self.home / 'staged')
+        self.assertEqual(loader.name, 'hyprland.lua')
+        self.assertIn(str(usr / 'share/hypratomic/hypr'), loader.read_text())
+
+    def test_existing_lua_loader_path_still_resolves(self):
+        old = USR / 'share/hypratomic/defaults/hypr/lua'
+        self.assertEqual(old.resolve(), self.config.defaults.resolve())
+        self.assertEqual((old / 'hyprland.lua').read_bytes(),
+                         (self.config.defaults / 'hyprland.lua').read_bytes())
+
+    def test_malformed_recovery_record_leaves_active_configuration(self):
+        self.original()
+        self.config.state.mkdir(parents=True)
+        self.config.record.write_text('{}')
+        with self.assertRaisesRegex(RuntimeError, 'Invalid recovery record'):
+            self.config.run('restore')
+        self.assertEqual((self.config.active / 'hyprland.conf').read_text(), 'known good conf\n')
 
     def test_overlapping_state_is_rejected(self):
         self.config.state = self.config.active / 'state'

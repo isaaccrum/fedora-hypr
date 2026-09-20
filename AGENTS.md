@@ -51,10 +51,11 @@ Use concise, action-oriented subjects; history also uses `chore(deps):` and `cho
 
 ## Architectural Rules
 
+- Track current upstream Wayblue and Hyprland versions and keep divergence from their defaults, APIs, and session integration minimal. Use the configuration format supported by current upstream Hyprland (currently Lua); migrate away from formats upstream removes. Do not pin or downgrade the base image or compositor, or add compatibility layers, merely to retain an obsolete configuration format.
 - Keep managed defaults under `/usr/share/hypratomic/` and user settings under `${XDG_CONFIG_HOME:-$HOME/.config}/hypratomic/`. Image updates and bootstrap must preserve existing user files.
 - Split Hyprland configuration into focused modules with explicit source ordering. Load application overrides before bindings and general user overrides last; document unbind/rebind behavior.
 - Keep monitor configuration machine-specific and user-owned. Never hardcode contributor hardware into shared defaults.
-- Use Foot as `$terminal`. Do not depend on Kitty for desktop operation.
+- Use Foot as the default terminal and Yazi as the default file manager, launched inside Foot. Do not depend on Kitty for desktop operation.
 - Make desktop activation explicit and reversible. Back up the working configuration before replacement, preserve directory/symlink/absent state, and retain the original recovery point across repeated activation.
 - Store recovery state under `${XDG_STATE_HOME:-$HOME/.local/state}/hypratomic/`. Restoration must work from a TTY without a running compositor; failed activation must recover the previous configuration.
 - Preserve Wayblue session integration and avoid duplicate service startup. Keep Waybar available as a known-good fallback. Installing an alternative shell must not automatically activate it.

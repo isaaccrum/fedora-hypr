@@ -21,10 +21,10 @@ Goal: prove the custom image is boring and recoverable.
 Exit criterion: you would be comfortable using this image for a week even if
 we stopped the project here.
 
-## Phase 2 — Hyprland behavior
+## Phase 2a — Explicit, recoverable Hyprland configuration
 
-Status: implemented in the repository; image build and hardware acceptance remain
-required before declaring this phase complete. See
+Status: Phase 2a implemented and local Docker image build passed on 2026-09-19.
+Hardware acceptance remains required before declaring Phase 2 complete. See
 [the validation checklist](docs/phase2-validation.md).
 
 Goal: make the desktop *behave* like Omarchy while keeping the shell simple.
@@ -38,9 +38,21 @@ Goal: make the desktop *behave* like Omarchy while keeping the shell simple.
 - Keep Waybar as the bar.
 - Add an activation/deactivation helper with backups.
 
-Implementation: modular Hyprlang/Lua profiles, separate user overrides,
+Implementation: upstream Lua modules under `/usr/share/hypratomic/hypr/`,
+Foot and Yazi defaults, separate user overrides,
 `hypratomic-activate` / `hypratomic-restore`, Wayblue session integration with
-Waybar, and isolated recovery tests. Quickshell remains unactivated.
+Waybar, and isolated recovery tests. Activation saves the working configuration
+before changes; restoration uses the latest activation cycle's recovery point.
+Repeated activation preserves that point. Deployment and login never activate
+the profile automatically. Quickshell remains unactivated.
+
+Validation: ShellCheck and Bash syntax checks passed, all 37 isolated tests
+passed, `bluebuild validate recipes/recipe.yml` passed, and
+`bluebuild build --build-driver docker recipes/recipe.yml` produced
+`localhost/hypratomic:latest`. The image validated its Lua configuration and
+exercised the installed activation/restoration commands in a disposable home.
+The recipe continues to track Wayblue `latest`; obsolete `.conf` support was
+removed instead of downgrading the compositor or base image.
 
 Exit criterion: Hyprland behavior is stable and can be disabled in one command.
 

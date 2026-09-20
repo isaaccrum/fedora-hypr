@@ -20,10 +20,17 @@ modules:
   # Keep Wayblue's compositor/session integration. Explicitly install the idle,
   # lock and keyring tools used by hypratomic-session; the base may omit them.
   - type: dnf
+    repos:
+      # Fedora installation source documented by Yazi upstream.
+      copr:
+        - lihaohong/yazi
+      cleanup: true
     install:
       packages:
         - quickshell
         - foot
+        - yazi # launched inside Foot
+        - file # Yazi file type detection
         - btop
         - fastfetch
         - fzf

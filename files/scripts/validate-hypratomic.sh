@@ -6,6 +6,9 @@ for name in bootstrap activate restore doctor session clipboard screenshot; do
     test -x "/usr/bin/hypratomic-$name"
 done
 test -f /usr/libexec/hypratomic/config.py
+for module in hyprland environment monitors input autostart keybinds look-and-feel windowrules user; do
+    test -r "/usr/share/hypratomic/hypr/$module.lua"
+done
 
 # Package names can differ from the executable name. Diagnostics must not
 # prevent the actual configuration check from running.
@@ -69,4 +72,15 @@ except subprocess.CalledProcessError as error:
             print('Shipped sample passed on the subsequent run; this does not rule out a first-run compositor bug.', flush=True)
     raise
 print(f'Validated Hypratomic {config.format} configuration against the image compositor')
+
+# Exercise the installed entry points only in the disposable build home.
+# The EXIT trap removes this home; no deployed user's desktop is activated.
+config.active.mkdir(parents=True)
+original = config.active / 'hyprland.conf'
+original.write_text('# Build validation recovery point\n')
+for action in ('activate', 'restore'):
+    subprocess.run([f'/usr/bin/hypratomic-{action}'], check=True)
+if original.read_text() != '# Build validation recovery point\n' or config.record.exists():
+    raise RuntimeError('Activation/restoration did not preserve the build recovery point')
+print('Validated installed activation and restoration helpers in an isolated home')
 PY
