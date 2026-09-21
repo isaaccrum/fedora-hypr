@@ -29,6 +29,8 @@ modules:
       packages:
         - quickshell
         - foot
+        - tmux
+        - neovim
         - yazi # launched inside Foot
         - file # Yazi file type detection
         - btop
@@ -44,6 +46,10 @@ modules:
 
     remove:
       packages:
+        - kitty
+        - kitty-kitten
+        - kitty-shell-integration
+        - kitty-terminfo
         # example: removing firefox (in favor of the flatpak)
         # "firefox" is the main package, "firefox-langpacks" is a dependency
         - firefox
@@ -56,12 +62,14 @@ modules:
         # If no repo information is specified, Flathub will be used by default
         install: # system flatpaks we want all users to have and not remove
           - com.vivaldi.Vivaldi
+          - md.obsidian.Obsidian
           # - org.mozilla.firefox
           # - org.gnome.Loupe
       - scope: user # Also add Flathub user repo, but no user packages
 
   - type: script
     scripts:
+      - terminal-defaults.sh
       - validate-hypratomic.sh
 
   - type: signing # this sets up the proper policy & signing files for signed images to work fully

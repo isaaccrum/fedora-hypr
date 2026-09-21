@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Run inside the image: verify the payload and configuration against its Hyprland.
-for name in bootstrap activate restore doctor session clipboard screenshot; do
+for name in bootstrap activate restore doctor session clipboard screenshot coding-bootstrap; do
     test -x "/usr/bin/hypratomic-$name"
 done
 test -f /usr/libexec/hypratomic/config.py
@@ -72,6 +72,10 @@ except subprocess.CalledProcessError as error:
             print('Shipped sample passed on the subsequent run; this does not rule out a first-run compositor bug.', flush=True)
     raise
 print(f'Validated Hypratomic {config.format} configuration against the image compositor')
+fallback = home / 'wayblue-fallback.lua'
+shutil.copy2('/usr/share/hyprland/hyprland.lua', fallback)
+config.verify(fallback)
+print('Validated Wayblue system fallback configuration')
 
 # Exercise the installed entry points only in the disposable build home.
 # The EXIT trap removes this home; no deployed user's desktop is activated.

@@ -7,7 +7,36 @@ the active bar; Quickshell is installed for future work but is not started.
 
 Phase 1 builds, boots, rebases, and OS rollback have been tested on hardware.
 See [PHASES.md](PHASES.md) for milestones and the remaining desktop acceptance
-checks. Kitty native-Wayland troubleshooting is outside this project's scope.
+checks. Kitty is removed from the image; both Hypratomic and Wayblue's system
+fallback use Foot. Existing personal configurations and recovery snapshots are
+preserved: change any `kitty` launch commands in your own configuration to `foot`
+when using the updated image.
+
+## Project goal and layers
+
+Hypratomic aims to be easy to reproduce, recover, rebuild, and set up quickly on
+new hardware. Fedora Atomic provides the replaceable OS foundation; systematic,
+version-controlled customizations provide the desktop and coding workflow.
+Machine-specific settings, credentials, and personal files remain user-owned.
+“Any system” means supported hardware, with documented prerequisites and graceful
+fallbacks rather than contributor-specific monitor, GPU, or storage assumptions.
+
+| Layer | Intended responsibility | Recovery boundary |
+|---|---|---|
+| OS image | Fedora Atomic, current Wayblue/Hyprland, shared packages | Redeploy a known image or roll back the OS |
+| Desktop and editor | Managed defaults plus preserved personal overrides | Explicit activation and configuration restoration |
+| Project environments | Recreate language tools from project definitions | Rebuild the environment without losing source files |
+| AI integration | Optional local or remote providers and agent sessions | Reconnect providers without making editing depend on AI |
+| User data | Self-hosted file access, synchronization, and separate backups | Recover files independently of the OS and configuration |
+
+Following current upstream and reproducing a known setup are complementary:
+record image digests, recipe revisions, tool versions, and project lockfiles for
+validated releases, then update them deliberately. A moving `latest` tag alone
+does not reproduce an earlier build. Archiving build inputs and testing recovery
+on a fresh machine are planned work, not a claim of bit-for-bit reproducibility.
+
+The desktop layer is implemented; the coding, AI, and user-data workflows below
+are planned. See [PHASES.md](PHASES.md) for acceptance criteria and status.
 
 ## Build and test
 
@@ -141,6 +170,111 @@ daemons are not started again. Wayblue's idle policy controls locking, display
 power, and suspend. Notification/portal activation remains with the base image.
 The recipe explicitly installs `swayidle`, `swaylock`, and `gnome-keyring` for
 this helper; their presence is not assumed from the base image.
+
+## Planned coding workflow
+
+The image now includes Neovim and Tmux. Run `hypratomic-coding-bootstrap` once as
+your user to install a preserved Tmux starting point under
+`${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf`; it never replaces an existing
+file. The intended launch sequence is Foot → Tmux → `nvim`.
+
+The primary workflow is Hyprland → Foot → Tmux or Herder → Neovim/LazyVim,
+with an Omarchy-inspired keyboard experience and Yazi for file navigation.
+Tmux is the initial supported multiplexer; evaluate it alongside the
+[Herder/herdr candidate](https://github.com/herdrdev/herdr) before selecting defaults.
+Editor and multiplexer setup must be repeatable, preserve personal configuration,
+and work without an AI account or a running local model.
+
+### Keybinding ownership
+
+| Layer | Binding policy |
+|---|---|
+| Hyprland | Super-based desktop/window/workspace actions; explicit media and system-key exceptions |
+| Foot | Minimal terminal shortcuts that do not swallow multiplexer or editor commands |
+| Tmux or Herder | A documented prefix and pane/session commands; audit direct shortcuts before enabling them |
+| Neovim/LazyVim | Preserve modal keys, editor leader mappings, and Ctrl-based editing/navigation |
+| AI plugin | A documented, unused editor leader subgroup after auditing LazyVim and plugin mappings |
+
+Do not assign global desktop actions to bare editor keys, the editor leader, or
+multiplexer prefixes. Keep the selected multiplexer close to upstream defaults;
+choose and document any prefix change after checking editor and shell conflicts.
+Test the complete chain in normal, insert, terminal, and copy modes, including
+pane navigation, clipboard use, nested sessions, and SSH. Current compositor
+bindings are predominantly Super-based; that alone is not proof that the full
+future stack is conflict-free. Publish one binding reference with each action's
+owner and an explicit unbind/rebind procedure.
+
+### Reproducible project environments
+
+Provide a short, documented path from cloning a repository to opening its editor,
+running tests, and rebuilding its environment. Start with Rust and
+TypeScript/JavaScript templates. Evaluate [Toolbx](https://containertoolbx.org/)
+and Distrobox/devcontainers for container-based toolchains, and optional
+[Nix flakes/dev shells](https://nix.dev/concepts/flakes.html) for locked tool versions.
+Choose one straightforward default; do not require several environment managers
+for every project. Nix integration with Atomic storage and updates must be tested
+before adoption.
+
+Definitions belong with the project: base-image digests or flake locks, language
+versions, dependency lockfiles, build/test commands, and any service dependencies.
+Compilers, LSP servers, formatters, debuggers, and AI-run commands must use the same
+project environment, with documented host/container paths and UID ownership.
+Avoid installing each project's language stack into the host image. Development
+environments isolate dependencies; shared-home containers and dev shells are not
+assumed to be security sandboxes. Verify deletion/recreation without losing source
+files, and document first-use downloads and offline limits.
+
+### AI inside Neovim/LazyVim
+
+Aim for a Zed-like threads/agents experience inside the editor: multiple
+project-scoped conversations, explicit file/selection context, resumable history,
+agent progress and cancellation, and reviewable edits with accept/reject controls.
+Support both local Ollama and remote providers through one configurable workflow;
+provider choice, credentials, model downloads, and GPU settings stay user-owned.
+Local inference should have a documented CPU or remote fallback where practical.
+
+[CodeCompanion](https://github.com/olimorris/codecompanion.nvim) is an initial
+candidate: its upstream documentation lists Ollama and remote providers, multiple
+chats, code review, and Agent Client Protocol integration. Evaluate it against the
+workflow above before selecting it; these capabilities do not establish full Zed
+parity, persistent history behavior, or equivalent tool use across models.
+
+Keep provider setup optional and reversible. Store secrets outside image layers
+and tracked files; make remote context transmission explicit. Agent shell commands
+must use the project environment, and changes must remain reviewable and undoable.
+The editor must remain usable when a provider is unavailable.
+
+## Planned user-data and recovery layer
+
+Provide a self-hosted, OneDrive-like experience for personal files: background
+synchronization while online, files-on-demand/virtual files, explicit offline
+pinning, bounded local caches, visible sync/conflict status, and easy reconnection
+on a replacement machine. This layer is separate from the image, desktop
+configuration, project toolchains, and optional AI services.
+
+Evaluate Seafile/SeaDrive and Nextcloud before selecting a service.
+[SeaDrive documents a Linux virtual-drive client](https://help.seafile.com/drive_client/drive_client_for_linux/),
+including AppImage/FUSE requirements; validate those requirements on Fedora Atomic
+and file access through Yazi, Neovim, and CLI tools. Require an actual Linux
+files-on-demand test for Nextcloud rather than assuming feature parity with its
+Windows/macOS clients. Compare offline writes, conflicts, permissions/symlinks,
+large files, startup/reconnect behavior, server maintenance, and licensing.
+
+Synchronization is not sufficient backup: deletions and corruption can propagate.
+Pair it with independently retained, versioned backups and documented retention,
+encryption/key recovery, and restore tests. Back up the self-hosted server's data,
+metadata/database, and configuration as required by the chosen service. A backup
+of a placeholder-only client directory is not a backup of the remote file contents.
+Define recovery-point and recovery-time targets before choosing an implementation;
+“real-time” sync does not guarantee zero data loss during outages.
+
+Keep active Git worktrees on local storage by default until virtual-drive locking,
+file watching, and offline behavior have been tested. Back up source files and
+uncommitted work deliberately; exclude rebuildable caches, `node_modules`, build
+outputs, downloaded models, and container layers by default. Keep the configuration
+recovery records under `~/.local/state/hypratomic/` (or `XDG_STATE_HOME`) in the
+recovery plan as well. Document recovery after both client-disk loss and server
+loss, including credentials and encryption keys retrieved from a separate source.
 
 ## Image installation and signing
 

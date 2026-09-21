@@ -37,6 +37,8 @@ else
 fi
 check_optional quickshell 'Quickshell (not activated)'
 check_cmd foot 'Foot terminal'
+check_cmd tmux 'Tmux multiplexer'
+check_cmd nvim 'Neovim editor'
 check_cmd distrobox 'Distrobox'
 check_cmd waybar 'Waybar fallback'
 check_optional hyprctl 'hyprctl'

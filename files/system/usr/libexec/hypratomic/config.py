@@ -76,7 +76,7 @@ class Configuration:
         print(f'User overrides: {self.user} (existing files preserved)')
 
     def preflight(self):
-        commands = ('foot', 'waybar', 'wofi', 'yazi', 'wl-copy', 'wl-paste',
+        commands = ('foot', 'waybar', 'wofi', 'yazi', 'tmux', 'nvim', 'wl-copy', 'wl-paste',
                     'cliphist', 'grim', 'slurp', 'swayidle', 'swaylock',
                     'dbus-update-activation-environment', 'gnome-keyring-daemon',
                     'nm-applet', 'pgrep', 'flock')

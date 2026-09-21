@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
+target="$config_home/tmux/tmux.conf"
+template=/usr/share/hypratomic/coding/tmux.conf
+
+[[ -r "$template" ]] || {
+    printf 'Missing image template: %s\n' "$template" >&2
+    exit 1
+}
+if [[ -e "$target" || -L "$target" ]]; then
+    printf 'Preserving existing Tmux configuration: %s\n' "$target"
+else
+    mkdir -p "$(dirname "$target")"
+    install -m 600 "$template" "$target"
+    printf 'Installed Tmux configuration: %s\n' "$target"
+fi
+
+printf '%s\n' \
+    'Coding workflow: launch Foot, then tmux, then nvim.' \
+    'Hyprland owns Super; Tmux owns Ctrl-a; Neovim/LazyVim owns its leader and modal keys.' \
+    'Herder remains optional until its setup is validated on Fedora Atomic.'
