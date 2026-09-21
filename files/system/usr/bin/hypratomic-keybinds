@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+mode="${1:-hyprland}"
+case "$mode" in
+    hyprland)
+        title='Hyprland keybinds'
+        : "${XDG_RUNTIME_DIR:?A graphical session is required}"
+        source_data="$(hyprctl binds -j)"
+        list="$(SOURCE_DATA="$source_data" python3 - <<'PY'
+import json
+import os
+
+mask_names = ((1, 'SHIFT'), (2, 'CAPS'), (4, 'CTRL'), (8, 'ALT'),
+              (16, 'MOD2'), (32, 'MOD3'), (64, 'SUPER'), (128, 'MOD5'))
+try:
+    bindings = json.loads(os.environ['SOURCE_DATA'])
+except (TypeError, json.JSONDecodeError) as error:
+    raise SystemExit(f'Could not read Hyprland bindings: {error}')
+
+for binding in bindings:
+    modifiers = '+'.join(name for bit, name in mask_names
+                          if int(binding.get('modmask', 0)) & bit)
+    key = binding.get('key', '') or '<mouse>'
+    dispatcher = binding.get('dispatcher', '')
+    argument = binding.get('arg', '')
+    description = binding.get('description', '')
+    shortcut = '+'.join(part for part in (modifiers, key) if part)
+    details = ' '.join(part for part in (dispatcher, argument) if part)
+    suffix = f' — {description}' if description else f' — {details}'
+    print(f'{shortcut:<30}{suffix}')
+PY
+)"
+        ;;
+    tmux)
+        title='Tmux keybinds'
+        if list="$(tmux list-keys 2>/dev/null)"; then
+            :
+        else
+            list='No active Tmux server. Start Tmux to view its configured key table.'
+        fi
+        ;;
+    *)
+        printf 'Usage: %s [hyprland|tmux]\n' "$0" >&2
+        exit 2
+        ;;
+esac
+
+printf '%s\n' "$list" | wofi --dmenu --prompt "$title" --lines 24 --width 900

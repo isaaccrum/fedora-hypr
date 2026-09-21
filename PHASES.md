@@ -51,6 +51,7 @@ Goal: make the desktop *behave* like Omarchy while keeping the shell simple.
 - Add idle/lock behavior.
 - Keep monitor configuration in a separate user-owned file.
 - Keep Waybar as the bar.
+- Provide live Hyprland and Tmux keybind lists without requiring Quickshell.
 - Add an activation/deactivation helper with backups.
 
 Implementation: upstream Lua modules under `/usr/share/hypratomic/hypr/`,
@@ -73,7 +74,8 @@ Exit criterion: Hyprland behavior is stable and can be disabled in one command.
 
 ## Phase 2b — Terminal coding workflow and keybinding audit
 
-Status: initial Tmux/Neovim baseline implemented; keymap and hardware workflow validation remain.
+Status: initial Tmux/Neovim baseline and live keybind viewer implemented; keymap
+and hardware workflow validation remain.
 
 Goal: Neovim/LazyVim inside Tmux or Herder, running in Foot on Hyprland, with an
 Omarchy-inspired workflow and no competing shortcuts between layers.

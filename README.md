@@ -149,6 +149,8 @@ Application overrides load before bindings; monitor settings stay user-owned;
 | Super+Shift+Return or Super+Shift+B | Vivaldi Flatpak |
 | Super+Shift+F | Yazi in Foot |
 | Super+Space | Wofi application launcher |
+| Super+K | Live Hyprland keybind list |
+| Ctrl+Super+K | Tmux keybind list |
 | Super+W | Close focused window |
 | Super+F / Super+T / Super+J | Fullscreen / floating / toggle split |
 | Super+arrows / Super+Shift+arrows | Focus / move window |
@@ -163,6 +165,12 @@ Application overrides load before bindings; monitor settings stay user-owned;
 Volume, brightness, and media keys are also bound. Clipboard history is stored by
 `cliphist` in the user's cache; run `cliphist wipe` to clear it. Region/picker
 cancellation leaves the clipboard unchanged.
+
+The keybind viewer is provided by `hypratomic-keybinds`. The Hyprland view reads
+the compositor's live binding registry, so user-added bindings appear after a
+reload. The Tmux view reads the active Tmux key table; start Tmux first for the
+complete configured list. Both views use Wofi and close without changing focus
+or configuration.
 
 The session helper retains Wayblue's D-Bus environment, keyring, wallet, polkit,
 network applet, Waybar, and `/usr/share/swayidle/config` behavior. Existing matching
