@@ -40,6 +40,28 @@ ShellRoot {
                         font.pixelSize: 12
                     }
 
+                    Rectangle {
+                        implicitWidth: 62
+                        implicitHeight: 24
+                        radius: 4
+                        color: menuMouse.containsMouse ? "#313244" : "transparent"
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Menu"
+                            color: "#cdd6f4"
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 12
+                        }
+
+                        MouseArea {
+                            id: menuMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: Quickshell.execDetached(["wofi", "--show", "drun"])
+                        }
+                    }
+
                     Text {
                         text: "Phase 4 preview"
                         color: "#6c7086"
