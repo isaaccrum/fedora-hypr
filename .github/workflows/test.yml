@@ -9,7 +9,7 @@ jobs:
   configuration:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Check shell syntax
         run: |
           for script in files/system/usr/bin/hypratomic-* files/scripts/*.sh; do
