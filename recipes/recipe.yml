@@ -44,6 +44,8 @@ modules:
         - swaylock
         - swaybg
         - gnome-keyring # provides /usr/bin/gnome-keyring-daemon
+        - jetbrains-mono-fonts
+        - cascadia-mono-nf-fonts
 
     remove:
       packages:

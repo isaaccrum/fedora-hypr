@@ -40,9 +40,10 @@ are planned. Host-image work proceeds through the visual and shell phases before
 project environments are added as a separate user-space layer. See
 [PHASES.md](PHASES.md) for acceptance criteria and status.
 
-Phase 3 starts with one restrained dark palette shared by Hyprland and Foot.
-Run `hypratomic-theme` once as your user to install the Foot fragment; an existing
-Foot configuration is preserved. Set a wallpaper explicitly with
+Phase 3 starts with one restrained dark palette shared by Hyprland, Foot, and GTK.
+The image includes JetBrains Mono and Cascadia Mono Nerd Font for coding and symbols.
+Run `hypratomic-theme` once as your user to install missing Foot and GTK fragments;
+existing configurations are preserved. Set a wallpaper explicitly with
 `hypratomic-wallpaper /path/to/image [fill|fit|center|tile]`; it uses `swaybg`,
 replaces only the wallpaper process it previously started, and never runs during
 login. The Hyprland palette is loaded by the explicit Hypratomic profile and

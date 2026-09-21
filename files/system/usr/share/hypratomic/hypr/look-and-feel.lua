@@ -20,7 +20,7 @@ hl.config({
     },
     misc = {
         background_color = palette.background,
-        font_family = "monospace",
+        font_family = "JetBrains Mono",
     },
     animations = { enabled = false },
 })

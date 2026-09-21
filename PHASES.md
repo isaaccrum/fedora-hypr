@@ -105,8 +105,9 @@ configuration alone.
 
 ## Phase 3 — Omarchy-inspired visual layer
 
-Status: initial dark palette, explicit Foot theme installer, and manual wallpaper
-helper implemented; font, wallpaper choice, and hardware visual validation remain.
+Status: initial dark palette, coding/Nerd fonts, explicit Foot and GTK theme
+installer, and manual wallpaper helper implemented; font rendering, wallpaper
+choice, and hardware visual validation remain.
 
 Goal: reproduce the visual language without importing Arch assumptions.
 
