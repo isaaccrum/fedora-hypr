@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
+target="$config_home/quickshell/hypratomic"
+template=/usr/share/hypratomic/defaults/quickshell/shell.qml
+
+if [[ "${1:-}" == "--check" ]]; then
+    command -v qs >/dev/null 2>&1 || command -v quickshell >/dev/null 2>&1 || {
+        printf 'Quickshell is not installed.\n' >&2
+        exit 1
+    }
+    [[ -r "$template" ]] || {
+        printf 'Missing Quickshell preview: %s\n' "$template" >&2
+        exit 1
+    }
+    printf 'Quickshell preview is available at %s\n' "$target"
+    exit 0
+fi
+
+if (($# > 0)); then
+    printf 'Usage: %s [--check]\n' "$0" >&2
+    exit 2
+fi
+command -v qs >/dev/null 2>&1 || command -v quickshell >/dev/null 2>&1 || {
+    printf 'Quickshell is not installed.\n' >&2
+    exit 1
+}
+[[ -r "$template" ]] || {
+    printf 'Missing Quickshell preview: %s\n' "$template" >&2
+    exit 1
+}
+
+if [[ -e "$target/shell.qml" || -L "$target/shell.qml" ]]; then
+    printf 'Preserving existing Quickshell configuration: %s\n' "$target"
+else
+    mkdir -p "$target"
+    install -m 600 "$template" "$target/shell.qml"
+    printf 'Installed opt-in Quickshell preview: %s\n' "$target/shell.qml"
+fi
+
+if command -v qs >/dev/null 2>&1; then
+    exec qs -c hypratomic
+fi
+exec quickshell -c hypratomic

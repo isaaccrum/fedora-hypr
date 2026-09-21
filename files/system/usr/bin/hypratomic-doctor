@@ -36,6 +36,7 @@ else
     check_cmd hyprland 'Hyprland'
 fi
 check_optional quickshell 'Quickshell (not activated)'
+check_cmd hypratomic-quickshell 'Quickshell preview helper'
 check_cmd foot 'Foot terminal'
 check_cmd tmux 'Tmux multiplexer'
 check_cmd nvim 'Neovim editor'

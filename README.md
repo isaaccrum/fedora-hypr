@@ -56,6 +56,10 @@ updates Hyprland active/inactive border colors at runtime. The Hyprland palette
 is loaded by the explicit Hypratomic profile and remains reversible with
 `hypratomic-restore`.
 
+Quickshell remains opt-in. Run `hypratomic-quickshell --check` and then
+`hypratomic-quickshell` to preview the Phase 4 bar alongside Waybar; it never
+starts automatically.
+
 ## Build and test
 
 ```bash

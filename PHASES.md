@@ -105,9 +105,9 @@ configuration alone.
 
 ## Phase 3 — Omarchy-inspired visual layer
 
-Status: initial palette, coding/Nerd fonts, Foot/GTK themes, and wallpaper picker
-implemented. The picker supports local files, cached `dharmx/walls` images,
-blacklisting, and runtime border colors; hardware visual validation remains.
+Status: complete on 2026-09-21. Palette, coding/Nerd fonts, Foot/GTK themes,
+wallpaper selection, blacklist/replacement, and runtime border colors were
+validated on hardware. Waybar remains the active shell.
 
 Goal: reproduce the visual language without importing Arch assumptions.
 
@@ -123,6 +123,10 @@ Exit criterion: screenshots should look recognizably Omarchy-inspired while
 remaining native to Fedora.
 
 ## Phase 4 — Quickshell / Quattro-style shell
+
+Status: started. An opt-in Quickshell bar preview and the evaluation/fallback
+procedure are implemented; launcher, notifications, OSD, and session surfaces
+remain.
 
 Goal: replace the collection of small desktop daemons with a coherent shell.
 
@@ -146,8 +150,9 @@ Status: planned; environment manager not yet selected.
 Goal: a short path from cloning a project to a working Rust or
 TypeScript/JavaScript development environment without per-project host layering.
 
-- Evaluate Toolbx/Distrobox/devcontainers and optional Nix flakes/dev shells;
-  select one simple default with an explicit Atomic-compatible setup/removal path.
+- Evaluate Toolbx/Distrobox/devcontainers, DevPod (`devpod.sh`), and optional
+  Nix flakes/dev shells; select one simple default with an explicit
+  Atomic-compatible setup/removal path.
 - Supply project templates with toolchain versions, image digests or flake locks,
   dependency locks, service definitions where needed, and build/test commands.
 - Resolve editor/LSP/formatter/debugger placement and ensure agent commands run

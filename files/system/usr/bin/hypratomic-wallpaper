@@ -28,7 +28,9 @@ def fail(message: str, code: int = 1) -> None:
 def paths() -> tuple[Path, Path, Path, Path]:
     state = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "hypratomic"
     data = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share")) / "hypratomic"
-    local = Path(os.environ.get("HYPRATOMIC_WALLPAPER_DIR", os.environ.get("XDG_PICTURES_DIR", Path.home() / "Pictures") + "/Wallpapers"))
+    override = os.environ.get("HYPRATOMIC_WALLPAPER_DIR")
+    pictures = Path(os.environ.get("XDG_PICTURES_DIR", str(Path.home() / "Pictures")))
+    local = Path(override).expanduser() if override else pictures / "Wallpapers"
     return state, data, local, data / "wallpapers/remote"
 
 
@@ -137,8 +139,30 @@ def apply(image: Path, state: Path, source: str) -> None:
     }, indent=2) + "\n")
     hyprctl = shutil.which("hyprctl")
     if hyprctl:
-        subprocess.run([hyprctl, "keyword", "general:col.active_border", f"rgba({active}ff)"], check=False)
-        subprocess.run([hyprctl, "keyword", "general:col.inactive_border", f"rgba({inactive}ff)"], check=False)
+        expression = (
+            'hl.config({ general = { col = { '
+            f'active_border = "rgba({active}ff)", '
+            f'inactive_border = "rgba({inactive}ff)" '
+            '} } })'
+        )
+        result = subprocess.run([hyprctl, "eval", expression], capture_output=True, text=True)
+        if result.returncode != 0:
+            # Keep compatibility with a compositor exposing only the keyword path.
+            result = subprocess.run(
+                [hyprctl, "keyword", "general:col.active_border", f"rgba({active}ff)"],
+                capture_output=True, text=True,
+            )
+            inactive_result = subprocess.run(
+                [hyprctl, "keyword", "general:col.inactive_border", f"rgba({inactive}ff)"],
+                capture_output=True, text=True,
+            )
+            if result.returncode != 0 or inactive_result.returncode != 0:
+                detail = (result.stderr or inactive_result.stderr or result.stdout or inactive_result.stdout).strip()
+                print(f"Hyprland rejected dynamic border colors: {detail}", file=sys.stderr)
+        elif result.stdout.strip():
+            print(f"Hyprland color update: {result.stdout.strip()}")
+    else:
+        print("hyprctl is unavailable; wallpaper changed but window colors were not updated", file=sys.stderr)
     print(f"Wallpaper: {image}")
     print(f"Window colors: active #{active}, inactive #{inactive}")
 
