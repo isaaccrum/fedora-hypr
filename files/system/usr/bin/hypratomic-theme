@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
+target="$config_home/foot/foot.ini"
+template=/usr/share/hypratomic/theme/foot.ini
+
+[[ -r "$template" ]] || {
+    printf 'Missing image theme template: %s\n' "$template" >&2
+    exit 1
+}
+
+if [[ -e "$target" || -L "$target" ]]; then
+    printf 'Preserving existing Foot configuration: %s\n' "$target"
+    exit 0
+fi
+
+mkdir -p "$(dirname "$target")"
+install -m 600 "$template" "$target"
+printf 'Installed Hypratomic Foot theme: %s\n' "$target"

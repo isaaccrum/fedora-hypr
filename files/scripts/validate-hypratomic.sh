@@ -2,11 +2,11 @@
 set -euo pipefail
 
 # Run inside the image: verify the payload and configuration against its Hyprland.
-for name in bootstrap activate restore doctor session clipboard screenshot coding-bootstrap keybinds; do
+for name in bootstrap activate restore doctor session clipboard screenshot coding-bootstrap keybinds theme; do
     test -x "/usr/bin/hypratomic-$name"
 done
 test -f /usr/libexec/hypratomic/config.py
-for module in hyprland environment monitors input autostart keybinds look-and-feel windowrules user; do
+for module in hyprland environment monitors input autostart keybinds look-and-feel palette windowrules user; do
     test -r "/usr/share/hypratomic/hypr/$module.lua"
 done
 

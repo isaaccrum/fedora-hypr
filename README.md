@@ -36,7 +36,14 @@ does not reproduce an earlier build. Archiving build inputs and testing recovery
 on a fresh machine are planned work, not a claim of bit-for-bit reproducibility.
 
 The desktop layer is implemented; the coding, AI, and user-data workflows below
-are planned. See [PHASES.md](PHASES.md) for acceptance criteria and status.
+are planned. Host-image work proceeds through the visual and shell phases before
+project environments are added as a separate user-space layer. See
+[PHASES.md](PHASES.md) for acceptance criteria and status.
+
+Phase 3 starts with one restrained dark palette shared by Hyprland and Foot.
+Run `hypratomic-theme` once as your user to install the Foot fragment; an existing
+Foot configuration is preserved. The Hyprland palette is loaded by the explicit
+Hypratomic profile and remains reversible with `hypratomic-restore`.
 
 ## Build and test
 
@@ -209,8 +216,10 @@ choose and document any prefix change after checking editor and shell conflicts.
 Test the complete chain in normal, insert, terminal, and copy modes, including
 pane navigation, clipboard use, nested sessions, and SSH. Current compositor
 bindings are predominantly Super-based; that alone is not proof that the full
-future stack is conflict-free. Publish one binding reference with each action's
-owner and an explicit unbind/rebind procedure.
+future stack is conflict-free. The [Phase 2b keymap audit](docs/phase2b-keymap.md)
+records ownership, the Tmux baseline, and the hardware verification procedure.
+Publish one binding reference with each action's owner and an explicit
+unbind/rebind procedure.
 
 ### Reproducible project environments
 

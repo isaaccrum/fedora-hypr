@@ -9,7 +9,12 @@ Follow current upstream while recording validated image digests, recipe revision
 and dependency locks. Fresh-machine provisioning and recovery are acceptance
 criteria; a moving `latest` tag or a successful image build alone is insufficient.
 The coding and data phases below are planned work, not installed features or
-selected products. They need not wait for the visual or alternative-shell phases.
+selected products.
+
+The execution order keeps host-image development together: first the base,
+Hyprland configuration, coding surface, visual layer, and shell. Project
+environments, AI, and user-data services follow as independent user-space
+layers; they are not added to the host image.
 
 ## Phase 1 — Proven bootable base (this repository)
 
@@ -74,8 +79,9 @@ Exit criterion: Hyprland behavior is stable and can be disabled in one command.
 
 ## Phase 2b — Terminal coding workflow and keybinding audit
 
-Status: initial Tmux/Neovim baseline and live keybind viewer implemented; keymap
-and hardware workflow validation remain.
+Status: Tmux/Neovim baseline and live keybind viewer implemented; the
+[ownership and audit procedure](docs/phase2b-keymap.md) is documented, while
+hardware workflow validation remains.
 
 Goal: Neovim/LazyVim inside Tmux or Herder, running in Foot on Hyprland, with an
 Omarchy-inspired workflow and no competing shortcuts between layers.
@@ -97,79 +103,10 @@ stack without intercepted shortcuts, and restore their previous configuration.
 Record the tested keymap; do not claim conflict-free behavior from the compositor
 configuration alone.
 
-## Phase 2c — Rebuildable project environments
-
-Status: planned; environment manager not yet selected.
-
-Goal: a short path from cloning a project to a working Rust or
-TypeScript/JavaScript development environment without per-project host layering.
-
-- Evaluate Toolbx/Distrobox/devcontainers and optional Nix flakes/dev shells;
-  select one simple default with an explicit Atomic-compatible setup/removal path.
-- Supply project templates with toolchain versions, image digests or flake locks,
-  dependency locks, service definitions where needed, and build/test commands.
-- Resolve editor/LSP/formatter/debugger placement and ensure agent commands run
-  with the same tools, working directory, and permissions as interactive commands.
-- Document shared-home access, mounted paths, UID ownership, caches, downloads,
-  offline limits, and dependency isolation versus security boundaries.
-- Test multiple projects with different toolchain versions and recreation after
-  removing their environments while preserving all source and uncommitted work.
-
-Exit criterion: Rust and TypeScript/JavaScript samples build and test on a second
-clean machine using recorded definitions, with working editor language support
-and no manual host package drift.
-
-## Phase 2d — AI threads and agents in Neovim
-
-Status: planned. Plugin, history storage, and default model/provider remain open.
-
-Goal: a Zed-like threads/agents workflow inside Neovim/LazyVim with optional local
-Ollama or remote AI, without making the editor depend on either.
-
-- Evaluate CodeCompanion and alternatives against multiple project-scoped threads,
-  selected-file context, persistent/resumable history, agent progress/cancellation,
-  and review/accept/reject/undo of edits. Do not assume full Zed parity.
-- Test both an Ollama model and a remote provider, including the actual model's
-  tool-use abilities; document hardware, download, and CPU/remote fallback limits.
-- Run agent tools in the selected project environment with reviewable command and
-  file access, and integrate shortcuts with the Phase 2b binding audit.
-- Keep credentials, model caches, and histories outside tracked configuration and
-  image layers; make source transmission to remote providers explicit.
-- Verify provider switching, unavailable-provider behavior, and normal offline
-  editing. Define which conversation history is included in user backups.
-
-Exit criterion: a user can switch local/remote providers, resume a project thread,
-review and undo agent edits, run project tests, and keep editing during an outage.
-
-## Phase 2e — Self-hosted user files and independent backups
-
-Status: planned. Seafile/SeaDrive and Nextcloud are candidates; no service is selected.
-
-Goal: a separate user-data layer with OneDrive-like background sync and Linux
-files-on-demand, plus recovery independent of OS rollback and the sync service.
-
-- Prototype both candidates on Fedora Atomic/Hyprland with Yazi, Neovim, and CLI
-  access. Verify actual Linux virtual-file support and packaging/FUSE requirements.
-- Test opening remote-only files, offline pinning, cache eviction, offline writes,
-  conflicts, renames/deletions, symlinks/permissions, reconnects, and large files.
-- Make synchronization status and failures visible. Define recovery-point and
-  recovery-time targets rather than promising zero-loss real-time backup.
-- Keep active worktrees local unless file watching, locking, and offline behavior
-  are proven suitable. Include uncommitted work in the recovery plan.
-- Add independently retained, versioned backups with encryption, retention,
-  separate key recovery, and explicit handling of server data/database/configuration.
-  Client placeholders and synchronized deletions must not defeat recovery.
-- Define backup inclusion/exclusion rules: preserve personal files, selected
-  configuration and recovery records; exclude regenerable dependencies, build
-  outputs, downloaded models, and container layers by default.
-- Document provisioning and maintaining the self-hosted server separately from
-  enrolling or replacing a desktop client.
-
-Exit criterion: demonstrate recovery of an earlier/deleted file, offline edits
-through a reconnect, and recovery after both client-disk loss and server loss.
-Verify remote file contents are backed up, not just placeholder names.
-
 ## Phase 3 — Omarchy-inspired visual layer
+
+Status: initial dark palette and explicit Foot theme installer implemented; font,
+wallpaper, and hardware visual validation remain.
 
 Goal: reproduce the visual language without importing Arch assumptions.
 
@@ -201,7 +138,79 @@ Goal: replace the collection of small desktop daemons with a coherent shell.
 Exit criterion: Quickshell is the normal daily shell and Waybar remains an
 available emergency fallback.
 
-## Phase 5 — Applications and polished distribution
+## Phase 5 — Rebuildable project environments
+
+Status: planned; environment manager not yet selected.
+
+Goal: a short path from cloning a project to a working Rust or
+TypeScript/JavaScript development environment without per-project host layering.
+
+- Evaluate Toolbx/Distrobox/devcontainers and optional Nix flakes/dev shells;
+  select one simple default with an explicit Atomic-compatible setup/removal path.
+- Supply project templates with toolchain versions, image digests or flake locks,
+  dependency locks, service definitions where needed, and build/test commands.
+- Resolve editor/LSP/formatter/debugger placement and ensure agent commands run
+  with the same tools, working directory, and permissions as interactive commands.
+- Document shared-home access, mounted paths, UID ownership, caches, downloads,
+  offline limits, and dependency isolation versus security boundaries.
+- Test multiple projects with different toolchain versions and recreation after
+  removing their environments while preserving all source and uncommitted work.
+
+Exit criterion: Rust and TypeScript/JavaScript samples build and test on a second
+clean machine using recorded definitions, with working editor language support
+and no manual host package drift.
+
+## Phase 6 — AI threads and agents in Neovim
+
+Status: planned. Plugin, history storage, and default model/provider remain open.
+
+Goal: a Zed-like threads/agents workflow inside Neovim/LazyVim with optional local
+Ollama or remote AI, without making the editor depend on either.
+
+- Evaluate CodeCompanion and alternatives against multiple project-scoped threads,
+  selected-file context, persistent/resumable history, agent progress/cancellation,
+  and review/accept/reject/undo of edits. Do not assume full Zed parity.
+- Test both an Ollama model and a remote provider, including the actual model's
+  tool-use abilities; document hardware, download, and CPU/remote fallback limits.
+- Run agent tools in the selected project environment with reviewable command and
+  file access, and integrate shortcuts with the Phase 2b binding audit.
+- Keep credentials, model caches, and histories outside tracked configuration and
+  image layers; make source transmission to remote providers explicit.
+- Verify provider switching, unavailable-provider behavior, and normal offline
+  editing. Define which conversation history is included in user backups.
+
+Exit criterion: a user can switch local/remote providers, resume a project thread,
+review and undo agent edits, run project tests, and keep editing during an outage.
+
+## Phase 7 — Self-hosted user files and independent backups
+
+Status: planned. Seafile/SeaDrive and Nextcloud are candidates; no service is selected.
+
+Goal: a separate user-data layer with OneDrive-like background sync and Linux
+files-on-demand, plus recovery independent of OS rollback and the sync service.
+
+- Prototype both candidates on Fedora Atomic/Hyprland with Yazi, Neovim, and CLI
+  access. Verify actual Linux virtual-file support and packaging/FUSE requirements.
+- Test opening remote-only files, offline pinning, cache eviction, offline writes,
+  conflicts, renames/deletions, symlinks/permissions, reconnects, and large files.
+- Make synchronization status and failures visible. Define recovery-point and
+  recovery-time targets rather than promising zero-loss real-time backup.
+- Keep active worktrees local unless file watching, locking, and offline behavior
+  are proven suitable. Include uncommitted work in the recovery plan.
+- Add independently retained, versioned backups with encryption, retention,
+  separate key recovery, and explicit handling of server data/database/configuration.
+  Client placeholders and synchronized deletions must not defeat recovery.
+- Define backup inclusion/exclusion rules: preserve personal files, selected
+  configuration and recovery records; exclude regenerable dependencies, build
+  outputs, downloaded models, and container layers by default.
+- Document provisioning and maintaining the self-hosted server separately from
+  enrolling or replacing a desktop client.
+
+Exit criterion: demonstrate recovery of an earlier/deleted file, offline edits
+through a reconnect, and recovery after both client-disk loss and server loss.
+Verify remote file contents are backed up, not just placeholder names.
+
+## Phase 8 — Applications and polished distribution
 
 - Flatpak policy and default applications.
 - Integrate the validated coding, environment, AI, and data layers into onboarding.
