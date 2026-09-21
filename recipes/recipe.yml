@@ -46,6 +46,7 @@ modules:
         - gnome-keyring # provides /usr/bin/gnome-keyring-daemon
         - jetbrains-mono-fonts
         - cascadia-mono-nf-fonts
+        - ImageMagick
 
     remove:
       packages:

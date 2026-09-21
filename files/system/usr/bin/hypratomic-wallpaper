@@ -1,52 +1,202 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env python3
+"""Select, blacklist, display, and color-match Hypratomic wallpapers."""
+from __future__ import annotations
 
-usage() {
-    printf 'Usage: %s IMAGE [MODE]\n' "$0" >&2
-    printf 'MODE is one of stretch, fit, fill, center, tile, or solid\n' >&2
-}
+import colorsys
+import json
+import os
+import random
+import shutil
+import signal
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+from pathlib import Path
 
-if (($# < 1 || $# > 2)); then
-    usage
-    exit 2
-fi
-image=$1
-mode=${2:-fill}
-[[ -f "$image" && -r "$image" ]] || {
-    printf 'Wallpaper is not a readable file: %s\n' "$image" >&2
-    exit 1
-}
-case "$mode" in
-    stretch|fit|fill|center|tile|solid) ;;
-    *)
-        printf 'Unsupported wallpaper mode: %s\n' "$mode" >&2
-        usage
-        exit 2
-        ;;
-esac
+REMOTE_API = "https://api.github.com/repos/dharmx/walls/git/trees/main?recursive=1"
+REMOTE_RAW = "https://raw.githubusercontent.com/dharmx/walls/main/"
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif"}
 
-state_home="${XDG_STATE_HOME:-$HOME/.local/state}"
-state_dir="$state_home/hypratomic"
-pid_file="$state_dir/wallpaper.pid"
-mkdir -p "$state_dir"
 
-if [[ -r "$pid_file" ]]; then
-    read -r old_pid < "$pid_file" || true
-    if [[ "${old_pid:-}" =~ ^[0-9]+$ ]] && kill -0 "$old_pid" 2>/dev/null; then
-        kill "$old_pid" 2>/dev/null || true
-        for _ in {1..20}; do
-            kill -0 "$old_pid" 2>/dev/null || break
-            sleep 0.05
-        done
-    fi
-fi
+def fail(message: str, code: int = 1) -> None:
+    print(message, file=sys.stderr)
+    raise SystemExit(code)
 
-command -v swaybg >/dev/null 2>&1 || {
-    printf 'swaybg is not installed; wallpaper was not changed.\n' >&2
-    exit 1
-}
 
-swaybg -i "$image" -m "$mode" >/dev/null 2>&1 &
-new_pid=$!
-printf '%s\n' "$new_pid" > "$pid_file"
-printf 'Wallpaper started: %s (mode: %s)\n' "$image" "$mode"
+def paths() -> tuple[Path, Path, Path, Path]:
+    state = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "hypratomic"
+    data = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share")) / "hypratomic"
+    local = Path(os.environ.get("HYPRATOMIC_WALLPAPER_DIR", os.environ.get("XDG_PICTURES_DIR", Path.home() / "Pictures") + "/Wallpapers"))
+    return state, data, local, data / "wallpapers/remote"
+
+
+def read_blacklist(path: Path) -> set[str]:
+    if not path.is_file():
+        return set()
+    return {line.strip() for line in path.read_text().splitlines() if line.strip()}
+
+
+def fetch_manifest(path: Path, force: bool = False) -> list[str]:
+    if path.is_file() and not force and time.time() - path.stat().st_mtime < 7 * 86400:
+        return json.loads(path.read_text())
+    request = urllib.request.Request(REMOTE_API, headers={"User-Agent": "hypratomic-wallpaper"})
+    try:
+        with urllib.request.urlopen(request, timeout=15) as response:
+            tree = json.load(response).get("tree", [])
+    except (OSError, urllib.error.URLError, json.JSONDecodeError) as error:
+        if path.is_file():
+            print(f"Remote wallpaper refresh failed; using cached list: {error}", file=sys.stderr)
+            return json.loads(path.read_text())
+        fail(f"Could not retrieve the remote wallpaper list: {error}")
+    names = sorted(item["path"] for item in tree
+                   if item.get("type") == "blob" and Path(item["path"]).suffix.lower() in IMAGE_EXTENSIONS)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(names, indent=2) + "\n")
+    return names
+
+
+def local_candidates(directory: Path) -> list[tuple[str, Path]]:
+    if not directory.is_dir():
+        return []
+    return [(f"local:{item.resolve()}", item) for item in directory.rglob("*")
+            if item.is_file() and item.suffix.lower() in IMAGE_EXTENSIONS]
+
+
+def download_remote(name: str, directory: Path) -> Path:
+    target = directory / name
+    if target.is_file():
+        return target
+    target.parent.mkdir(parents=True, exist_ok=True)
+    request = urllib.request.Request(REMOTE_RAW + urllib.request.quote(name),
+                                     headers={"User-Agent": "hypratomic-wallpaper"})
+    temporary = target.with_suffix(target.suffix + ".part")
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response, temporary.open("wb") as output:
+            shutil.copyfileobj(response, output)
+        temporary.replace(target)
+    except (OSError, urllib.error.URLError) as error:
+        temporary.unlink(missing_ok=True)
+        raise RuntimeError(f"Could not download {name}: {error}") from error
+    return target
+
+
+def stop_previous(state: Path) -> None:
+    pid_file = state / "wallpaper.pid"
+    if not pid_file.is_file():
+        return
+    try:
+        pid = int(pid_file.read_text().strip())
+    except ValueError:
+        pid_file.unlink(missing_ok=True)
+        return
+    try:
+        os.kill(pid, 0)
+        os.kill(pid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    except PermissionError as error:
+        fail(f"Cannot stop previous wallpaper process {pid}: {error}")
+    pid_file.unlink(missing_ok=True)
+
+
+def image_color(image: Path) -> tuple[str, str]:
+    convert = shutil.which("magick") or shutil.which("convert")
+    if not convert:
+        fail("ImageMagick is required to match window colors to the wallpaper")
+    try:
+        ppm = subprocess.check_output(
+            [convert, str(image), "-resize", "1x1!", "-depth", "8", "ppm:-"],
+            stderr=subprocess.DEVNULL,
+        )
+        marker = ppm.find(b"\n255\n")
+        if marker < 0 or len(ppm) < marker + 8:
+            raise ValueError("invalid PPM output")
+        red, green, blue = ppm[marker + 5:marker + 8]
+    except (OSError, subprocess.CalledProcessError, ValueError) as error:
+        fail(f"Could not extract colors from {image}: {error}")
+    hue, saturation, value = colorsys.rgb_to_hsv(red / 255, green / 255, blue / 255)
+    accent = colorsys.hsv_to_rgb(hue, max(0.45, min(0.95, saturation * 1.35)), max(0.65, value))
+    active = "".join(f"{round(component * 255):02x}" for component in accent)
+    inactive = "".join(f"{round(component * 95):02x}" for component in accent)
+    return active, inactive
+
+
+def apply(image: Path, state: Path, source: str) -> None:
+    swaybg = shutil.which("swaybg")
+    if not swaybg:
+        fail("swaybg is not installed; wallpaper was not changed")
+    active, inactive = image_color(image)
+    stop_previous(state)
+    process = subprocess.Popen([swaybg, "-i", str(image), "-m", "fill"],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    (state / "wallpaper.pid").write_text(f"{process.pid}\n")
+    (state / "wallpaper-current.json").write_text(json.dumps({
+        "source": source, "path": str(image), "active": active, "inactive": inactive,
+    }, indent=2) + "\n")
+    hyprctl = shutil.which("hyprctl")
+    if hyprctl:
+        subprocess.run([hyprctl, "keyword", "general:col.active_border", f"rgba({active}ff)"], check=False)
+        subprocess.run([hyprctl, "keyword", "general:col.inactive_border", f"rgba({inactive}ff)"], check=False)
+    print(f"Wallpaper: {image}")
+    print(f"Window colors: active #{active}, inactive #{inactive}")
+
+
+def choose(state: Path, data: Path, local: Path, remote: Path, blacklist: set[str]) -> tuple[str, Path]:
+    candidates = local_candidates(local)
+    manifest_path = data / "wallpapers/remote-manifest.json"
+    try:
+        remote_names = fetch_manifest(manifest_path)
+    except SystemExit:
+        remote_names = []
+    candidates.extend((f"remote:{name}", remote / name) for name in remote_names)
+    candidates = [candidate for candidate in candidates if candidate[0] not in blacklist]
+    if not candidates:
+        fail("No non-blacklisted wallpapers remain. Remove entries from the blacklist to reset it.")
+    randomizer = random.SystemRandom()
+    for source, path in randomizer.sample(candidates, len(candidates)):
+        if source.startswith("remote:"):
+            try:
+                path = download_remote(source.removeprefix("remote:"), remote)
+            except RuntimeError as error:
+                print(error, file=sys.stderr)
+                continue
+        return source, path
+    fail("Every selected remote wallpaper failed to download")
+
+
+def main() -> None:
+    command = sys.argv[1] if len(sys.argv) > 1 else "next"
+    state, data, local, remote = paths()
+    state.mkdir(parents=True, exist_ok=True)
+    current_file = state / "wallpaper-current.json"
+    blacklist_file = state / "wallpaper-blacklist"
+    if command == "sync":
+        names = fetch_manifest(data / "wallpapers/remote-manifest.json", force=True)
+        print(f"Cached {len(names)} remote wallpapers from dharmx/walls")
+        return
+    blacklist = read_blacklist(blacklist_file)
+    if command == "blacklist":
+        if current_file.is_file():
+            current = json.loads(current_file.read_text())
+            blacklist.add(current["source"])
+            blacklist_file.write_text("\n".join(sorted(blacklist)) + "\n")
+            print(f"Blacklisted: {current['source']}")
+        command = "next"
+    if command == "set":
+        if len(sys.argv) != 3:
+            fail("Usage: hypratomic-wallpaper set IMAGE", 2)
+        image = Path(sys.argv[2]).expanduser().resolve()
+        if not image.is_file():
+            fail(f"Wallpaper is not a readable file: {image}")
+        apply(image, state, f"local:{image}")
+        return
+    if command != "next":
+        fail("Usage: hypratomic-wallpaper [next|blacklist|set IMAGE|sync]", 2)
+    source, image = choose(state, data, local, remote, blacklist)
+    apply(image, state, source)
+
+
+if __name__ == "__main__":
+    main()

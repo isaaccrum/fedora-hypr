@@ -105,9 +105,9 @@ configuration alone.
 
 ## Phase 3 — Omarchy-inspired visual layer
 
-Status: initial dark palette, coding/Nerd fonts, explicit Foot and GTK theme
-installer, and manual wallpaper helper implemented; font rendering, wallpaper
-choice, and hardware visual validation remain.
+Status: initial palette, coding/Nerd fonts, Foot/GTK themes, and wallpaper picker
+implemented. The picker supports local files, cached `dharmx/walls` images,
+blacklisting, and runtime border colors; hardware visual validation remains.
 
 Goal: reproduce the visual language without importing Arch assumptions.
 

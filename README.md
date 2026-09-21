@@ -43,11 +43,18 @@ project environments are added as a separate user-space layer. See
 Phase 3 starts with one restrained dark palette shared by Hyprland, Foot, and GTK.
 The image includes JetBrains Mono and Cascadia Mono Nerd Font for coding and symbols.
 Run `hypratomic-theme` once as your user to install missing Foot and GTK fragments;
-existing configurations are preserved. Set a wallpaper explicitly with
-`hypratomic-wallpaper /path/to/image [fill|fit|center|tile]`; it uses `swaybg`,
-replaces only the wallpaper process it previously started, and never runs during
-login. The Hyprland palette is loaded by the explicit Hypratomic profile and
-remains reversible with `hypratomic-restore`.
+existing configurations are preserved. Set a wallpaper explicitly with `hypratomic-wallpaper next` or
+`hypratomic-wallpaper set /path/to/image`. The picker combines
+`${XDG_PICTURES_DIR:-$HOME/Pictures}/Wallpapers` with a cached manifest from
+`dharmx/walls`, downloads remote images on demand, and stores its cache under
+`${XDG_DATA_HOME:-$HOME/.local/share}/hypratomic`. `hypratomic-wallpaper sync`
+refreshes that manifest. `Super+Shift+W` blacklists the current source under
+`${XDG_STATE_HOME:-$HOME/.local/state}/hypratomic` and immediately chooses another.
+The helper uses `swaybg`, replaces only the process it previously started, and
+never runs during login. It samples the selected image with ImageMagick and
+updates Hyprland active/inactive border colors at runtime. The Hyprland palette
+is loaded by the explicit Hypratomic profile and remains reversible with
+`hypratomic-restore`.
 
 ## Build and test
 
@@ -161,6 +168,7 @@ Application overrides load before bindings; monitor settings stay user-owned;
 | Super+Shift+F | Yazi in Foot |
 | Super+Space | Wofi application launcher |
 | Super+K | Live Hyprland keybind list |
+| Super+Shift+W | Blacklist the current wallpaper and choose another |
 | Ctrl+Super+K | Tmux keybind list |
 | Super+W | Close focused window |
 | Super+F / Super+T / Super+J | Fullscreen / floating / toggle split |
