@@ -42,8 +42,11 @@ project environments are added as a separate user-space layer. See
 
 Phase 3 starts with one restrained dark palette shared by Hyprland and Foot.
 Run `hypratomic-theme` once as your user to install the Foot fragment; an existing
-Foot configuration is preserved. The Hyprland palette is loaded by the explicit
-Hypratomic profile and remains reversible with `hypratomic-restore`.
+Foot configuration is preserved. Set a wallpaper explicitly with
+`hypratomic-wallpaper /path/to/image [fill|fit|center|tile]`; it uses `swaybg`,
+replaces only the wallpaper process it previously started, and never runs during
+login. The Hyprland palette is loaded by the explicit Hypratomic profile and
+remains reversible with `hypratomic-restore`.
 
 ## Build and test
 

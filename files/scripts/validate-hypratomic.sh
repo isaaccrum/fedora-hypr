@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Run inside the image: verify the payload and configuration against its Hyprland.
-for name in bootstrap activate restore doctor session clipboard screenshot coding-bootstrap keybinds theme; do
+for name in bootstrap activate restore doctor session clipboard screenshot coding-bootstrap keybinds theme wallpaper; do
     test -x "/usr/bin/hypratomic-$name"
 done
 test -f /usr/libexec/hypratomic/config.py

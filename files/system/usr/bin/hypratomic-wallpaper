@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+    printf 'Usage: %s IMAGE [MODE]\n' "$0" >&2
+    printf 'MODE is one of stretch, fit, fill, center, tile, or solid\n' >&2
+}
+
+if (($# < 1 || $# > 2)); then
+    usage
+    exit 2
+fi
+image=$1
+mode=${2:-fill}
+[[ -f "$image" && -r "$image" ]] || {
+    printf 'Wallpaper is not a readable file: %s\n' "$image" >&2
+    exit 1
+}
+case "$mode" in
+    stretch|fit|fill|center|tile|solid) ;;
+    *)
+        printf 'Unsupported wallpaper mode: %s\n' "$mode" >&2
+        usage
+        exit 2
+        ;;
+esac
+
+state_home="${XDG_STATE_HOME:-$HOME/.local/state}"
+state_dir="$state_home/hypratomic"
+pid_file="$state_dir/wallpaper.pid"
+mkdir -p "$state_dir"
+
+if [[ -r "$pid_file" ]]; then
+    read -r old_pid < "$pid_file" || true
+    if [[ "${old_pid:-}" =~ ^[0-9]+$ ]] && kill -0 "$old_pid" 2>/dev/null; then
+        kill "$old_pid" 2>/dev/null || true
+        for _ in {1..20}; do
+            kill -0 "$old_pid" 2>/dev/null || break
+            sleep 0.05
+        done
+    fi
+fi
+
+command -v swaybg >/dev/null 2>&1 || {
+    printf 'swaybg is not installed; wallpaper was not changed.\n' >&2
+    exit 1
+}
+
+swaybg -i "$image" -m "$mode" >/dev/null 2>&1 &
+new_pid=$!
+printf '%s\n' "$new_pid" > "$pid_file"
+printf 'Wallpaper started: %s (mode: %s)\n' "$image" "$mode"
