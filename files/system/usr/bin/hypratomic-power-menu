@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${1:-}" == "--check" ]]; then
+    command -v walker >/dev/null 2>&1 || {
+        printf 'Walker is required for the power menu.\n' >&2
+        exit 1
+    }
+    command -v loginctl >/dev/null 2>&1 || {
+        printf 'loginctl is required for the power menu.\n' >&2
+        exit 1
+    }
+    printf 'Power menu is available.\n'
+    exit 0
+fi
+
+if (($# > 0)); then
+    printf 'Usage: %s [--check]\n' "$0" >&2
+    exit 2
+fi
+
+choice="$(printf '%s\n' Lock Suspend Logout Reboot Poweroff | walker --dmenu --placeholder 'Session')"
+case "$choice" in
+    Lock)
+        exec loginctl lock-session
+        ;;
+    Suspend)
+        exec systemctl suspend
+        ;;
+    Logout)
+        exec hyprctl dispatch exit
+        ;;
+    Reboot)
+        exec systemctl reboot
+        ;;
+    Poweroff)
+        exec systemctl poweroff
+        ;;
+    *)
+        exit 0
+        ;;
+esac

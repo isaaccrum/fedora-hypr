@@ -65,7 +65,8 @@ Foot and Yazi defaults, separate user overrides,
 Waybar, and isolated recovery tests. Activation saves the working configuration
 before changes; restoration uses the latest activation cycle's recovery point.
 Repeated activation preserves that point. Deployment and login never activate
-the profile automatically. Quickshell remains unactivated.
+the profile automatically. Quickshell activation is handled by the session layer
+and is tracked in Phase 4.
 
 Validation: ShellCheck and Bash syntax checks passed, all 37 isolated tests
 passed, `bluebuild validate recipes/recipe.yml` passed, and
@@ -107,7 +108,8 @@ configuration alone.
 
 Status: complete on 2026-09-21. Palette, coding/Nerd fonts, Foot/GTK themes,
 wallpaper selection, blacklist/replacement, and runtime border colors were
-validated on hardware. Waybar remains the active shell.
+validated on hardware. Quickshell is now the default shell; Waybar remains the
+explicit recovery fallback.
 
 Goal: reproduce the visual language without importing Arch assumptions.
 
@@ -124,9 +126,8 @@ remaining native to Fedora.
 
 ## Phase 4 — Quickshell / Quattro-style shell
 
-Status: started. An opt-in Quickshell bar preview and the evaluation/fallback
-procedure are implemented; launcher, notifications, OSD, and session surfaces
-remain.
+Status: started. Quickshell is now the default shell with Walker launcher,
+notification toast, and power/session menu; OSD remains.
 
 Goal: replace the collection of small desktop daemons with a coherent shell.
 
@@ -138,7 +139,8 @@ Goal: replace the collection of small desktop daemons with a coherent shell.
 - Polkit surface if appropriate.
 - Network/Bluetooth controls.
 - Theme integration.
-- Only then disable Waybar and any replaced services.
+- Keep Waybar as an explicit recovery fallback while validating the replacement
+  surfaces.
 
 Exit criterion: Quickshell is the normal daily shell and Waybar remains an
 available emergency fallback.

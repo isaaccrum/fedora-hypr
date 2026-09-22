@@ -1,9 +1,9 @@
-# Quickshell configuration — Phase 4 target
+# Quickshell configuration
 
-Quickshell is installed in Phase 1, but Waybar remains the active fallback bar.
+Quickshell is the default shell. `hypratomic-session --waybar` starts Waybar as
+the recovery fallback.
 
-Phase 4 will add the Omarchy/Quattro-inspired shell here: bar, launcher,
-notifications, OSD, lock/power UI, network/Bluetooth surfaces, and theme
-integration. It will be activated only after the Hyprland layer is stable. Follow
-[the validation procedure](docs/phase4-validation.md) in the
-repository before enabling it.
+The shell provides the bar, Walker launcher, notifications, and power/session
+menu. It does not start a second keyring, idle/lock, portal, or network service.
+Use [the validation procedure](../../../../docs/phase4-validation.md) when
+testing changes.

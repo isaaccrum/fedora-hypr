@@ -67,7 +67,7 @@ Path(sys.argv[3]).write_bytes(b'PNG\\x00\\xff')
 
     def test_clipboard_picker_cancellation_keeps_clipboard(self):
         self.stub('cliphist', 'print("1\\ttext")\n')
-        self.stub('wofi', 'import sys; sys.stdin.read(); sys.exit(1)\n')
+        self.stub('walker', 'import sys; sys.stdin.read(); sys.exit(1)\n')
         result = self.run_helper('hypratomic-clipboard')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.clipboard.read_bytes(), b'previous clipboard')
@@ -80,7 +80,7 @@ else:
     assert sys.stdin.read() == '1\\timage\\n'
     sys.stdout.buffer.write(b'image\\x00\\xff')
 ''')
-        self.stub('wofi', 'import sys; sys.stdout.write(sys.stdin.read())\n')
+        self.stub('walker', 'import sys; sys.stdout.write(sys.stdin.read())\n')
         result = self.run_helper('hypratomic-clipboard')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.clipboard.read_bytes(), b'image\x00\xff')
