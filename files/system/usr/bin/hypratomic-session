@@ -32,6 +32,8 @@ if [[ "$shell" == quickshell ]]; then
     start_once elephant elephant
     start_once quickshell hypratomic-quickshell
 else
+    pkill -u "$uid" -x quickshell 2>/dev/null || true
+    pkill -u "$uid" -x qs 2>/dev/null || true
     start_once waybar waybar
 fi
 start_once xfce-polkit /usr/libexec/xfce-polkit

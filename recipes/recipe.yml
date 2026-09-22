@@ -31,6 +31,7 @@ modules:
         - quickshell
         - walker
         - elephant
+        - distrobox
         - foot
         - tmux
         - neovim
@@ -78,6 +79,7 @@ modules:
   - type: script
     scripts:
       - terminal-defaults.sh
+      - prune-host-toolchains.sh
       - validate-hypratomic.sh
 
   - type: signing # this sets up the proper policy & signing files for signed images to work fully

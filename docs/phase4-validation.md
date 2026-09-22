@@ -8,7 +8,9 @@ helper copies the managed shell to `~/.config/quickshell/hypratomic/shell.qml`
 only when that file is absent, preserving user changes.
 
 Waybar remains available as an explicit fallback with
-`hypratomic-session --waybar` from a recovery shell or TTY.
+`hypratomic-session --waybar` from a recovery shell inside the graphical user
+session. Use a TTY to restore the Hyprland configuration, then log in and invoke
+the fallback session.
 
 The notification server is separately opt-in during testing:
 

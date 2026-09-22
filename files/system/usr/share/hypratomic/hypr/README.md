@@ -12,8 +12,8 @@ a binding in the final user file requires `hl.unbind` before `hl.bind`.
 
 Foot is the terminal; Yazi runs inside Foot. `hypratomic-session` starts the
 managed Quickshell and Walker provider service by default, while preserving
-Wayblue's other session services. Use `hypratomic-session --waybar` from a TTY
-or recovery shell to use Waybar as the fallback. Nothing activates this profile
+Wayblue's other session services. Use `hypratomic-session --waybar` from a
+graphical recovery shell to use Waybar as the fallback. Nothing activates this profile
 during deployment; run `hypratomic-activate` explicitly. Use
 `hypratomic-restore` from a TTY to restore the saved configuration without a
 compositor.
