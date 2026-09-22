@@ -4,6 +4,12 @@ set -euo pipefail
 config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
 target="$config_home/quickshell/hypratomic"
 template=/usr/share/hypratomic/defaults/quickshell/shell.qml
+notifications=0
+
+if [[ "${1:-}" == "--notifications" ]]; then
+    notifications=1
+    shift
+fi
 
 if [[ "${1:-}" == "--check" ]]; then
     command -v qs >/dev/null 2>&1 || command -v quickshell >/dev/null 2>&1 || {
@@ -11,15 +17,15 @@ if [[ "${1:-}" == "--check" ]]; then
         exit 1
     }
     [[ -r "$template" ]] || {
-        printf 'Missing Quickshell preview: %s\n' "$template" >&2
+        printf 'Missing Quickshell configuration: %s\n' "$template" >&2
         exit 1
     }
-    printf 'Quickshell preview is available at %s\n' "$target"
+    printf 'Quickshell configuration is available at %s\n' "$target"
     exit 0
 fi
 
 if (($# > 0)); then
-    printf 'Usage: %s [--check]\n' "$0" >&2
+    printf 'Usage: %s [--check|--notifications]\n' "$0" >&2
     exit 2
 fi
 command -v qs >/dev/null 2>&1 || command -v quickshell >/dev/null 2>&1 || {
@@ -27,7 +33,7 @@ command -v qs >/dev/null 2>&1 || command -v quickshell >/dev/null 2>&1 || {
     exit 1
 }
 [[ -r "$template" ]] || {
-    printf 'Missing Quickshell preview: %s\n' "$template" >&2
+    printf 'Missing Quickshell configuration: %s\n' "$template" >&2
     exit 1
 }
 
@@ -36,9 +42,12 @@ if [[ -e "$target/shell.qml" || -L "$target/shell.qml" ]]; then
 else
     mkdir -p "$target"
     install -m 600 "$template" "$target/shell.qml"
-    printf 'Installed opt-in Quickshell preview: %s\n' "$target/shell.qml"
+    printf 'Installed managed Quickshell configuration: %s\n' "$target/shell.qml"
 fi
 
+if ((notifications)); then
+    export HYPRATOMIC_QUICKSHELL_NOTIFICATIONS=1
+fi
 if command -v qs >/dev/null 2>&1; then
     exec qs -c hypratomic
 fi

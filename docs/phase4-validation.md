@@ -1,20 +1,34 @@
 # Phase 4 Quickshell validation
 
-## Current preview
+## Default shell
 
-Run `hypratomic-quickshell --check` to verify the installed preview, then run
-`hypratomic-quickshell` from a Foot terminal to start the bar manually. It copies
-the preview to `~/.config/quickshell/hypratomic/shell.qml` only when that file is
-absent. Stop it with `Ctrl-C`; Waybar remains active throughout this preview.
+Quickshell starts automatically from `hypratomic-session`. Run
+`hypratomic-quickshell --check` to verify the installed configuration. The
+helper copies the managed shell to `~/.config/quickshell/hypratomic/shell.qml`
+only when that file is absent, preserving user changes.
 
-Quickshell remains an explicit opt-in during Phase 4. Waybar and the existing
-Wayblue session services remain the recovery shell until every required surface
-has been tested.
+Waybar remains available as an explicit fallback with
+`hypratomic-session --waybar` from a recovery shell or TTY.
+
+The notification server is separately opt-in during testing:
+
+```bash
+hypratomic-quickshell --notifications
+```
+
+It registers Quickshell as the notification server and displays one themed toast
+for six seconds. Only one desktop notification server may own the D-Bus
+notification name, so stop any existing notification daemon before testing this
+mode. Stop it with `Ctrl-C` to return to the existing daemon.
+
+The bar's `Power` button launches `hypratomic-power-menu`. It offers lock,
+suspend, logout, reboot, and poweroff actions through Walker; no action occurs
+until one is selected. Check it with `hypratomic-power-menu --check`.
 
 ## Evaluation order
 
-1. Start Quickshell manually from a terminal in a disposable user configuration.
-2. Test the bar without disabling Waybar.
+1. Start a disposable session with the default Quickshell shell.
+2. Test the bar and Walker launcher.
 3. Add and test the launcher, notifications, OSD, and power/session controls one
    surface at a time.
 4. Test network, Bluetooth, volume, brightness, lock, suspend, and logout actions.
@@ -22,12 +36,12 @@ has been tested.
    behavior remain unchanged.
 6. Test a broken or missing Quickshell configuration and recover by returning to
    Waybar from a TTY.
-7. Only after a complete successful session test may the normal session start
-   Quickshell; Waybar must remain available through an explicit fallback path.
+7. Keep Waybar available through the explicit fallback path.
 
 ## Safety requirements
 
-- Deployment and login do not start Quickshell during evaluation.
+- Image deployment does not start Quickshell; login starts it through the managed
+  session helper.
 - A Quickshell configuration is user-owned and must be backed up before changes.
 - Quickshell must not start services already owned by Wayblue, including keyring,
   D-Bus, idle/lock, notification, portal, or network services.

@@ -46,4 +46,4 @@ PY
         ;;
 esac
 
-printf '%s\n' "$list" | wofi --dmenu --prompt "$title" --lines 24 --width 900
+printf '%s\n' "$list" | walker --dmenu --placeholder "$title"

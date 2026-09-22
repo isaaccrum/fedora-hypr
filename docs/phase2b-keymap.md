@@ -4,7 +4,7 @@ This is the supported input ownership for the initial coding workflow:
 
 | Layer | Owner | Reserved input | Notes |
 |---|---|---|---|
-| Hyprland | Desktop/session | `Super` combinations, `Print`, media keys | Desktop actions launch Foot, Yazi, Wofi, screenshots, and the keybind viewer. |
+| Hyprland | Desktop/session | `Super` combinations, `Print`, media keys | Desktop actions launch Foot, Yazi, Walker, screenshots, and the keybind viewer. |
 | Foot | Terminal | Terminal-emulator defaults | Foot does not claim the Tmux prefix or Neovim leader. |
 | Tmux | Multiplexer | `Ctrl-a` prefix, then pane/session commands | Pane movement uses prefix plus arrows. Direct `Ctrl-h/j/k/l` remains available to Neovim and shell programs. |
 | Neovim/LazyVim | Editor | Modal keys and the editor leader | The editor owns its buffer, split, completion, and terminal mappings. |

@@ -8,6 +8,14 @@ exec 9>"$XDG_RUNTIME_DIR/hypratomic-session.lock"
 flock -n 9 || exit 0
 uid="$(id -u)"
 
+shell="quickshell"
+if [[ "${1:-}" == "--waybar" ]]; then
+    shell="waybar"
+elif (($# > 0)); then
+    printf 'Usage: %s [--waybar]\n' "$0" >&2
+    exit 2
+fi
+
 start_once() {
     local process="$1"
     shift
@@ -20,7 +28,12 @@ start_once() {
 dbus-update-activation-environment --systemd --all || printf 'Could not import session environment\n' >&2
 /usr/bin/gnome-keyring-daemon --start --components=secrets || printf 'Could not start keyring\n' >&2
 /usr/libexec/pam_kwallet_init || printf 'Could not initialize wallet\n' >&2
-start_once waybar waybar
+if [[ "$shell" == quickshell ]]; then
+    start_once elephant elephant
+    start_once quickshell hypratomic-quickshell
+else
+    start_once waybar waybar
+fi
 start_once xfce-polkit /usr/libexec/xfce-polkit
 start_once nm-applet nm-applet
 # Includes lock-on-idle, before-sleep, loginctl lock-session, and DPMS handling.

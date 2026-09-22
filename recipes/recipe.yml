@@ -24,10 +24,13 @@ modules:
       # Fedora installation source documented by Yazi upstream.
       copr:
         - lihaohong/yazi
+        - errornointernet/walker
       cleanup: true
     install:
       packages:
         - quickshell
+        - walker
+        - elephant
         - foot
         - tmux
         - neovim
@@ -36,10 +39,11 @@ modules:
         - btop
         - fastfetch
         - fzf
+        - tree-sitter-cli
         - ripgrep
         - fd-find
         - python3 # transactional activation/restoration (standard library only)
-        - cliphist # clipboard history; wl-clipboard/wofi come from Wayblue
+        - cliphist # clipboard history; wl-clipboard comes from Wayblue
         - swayidle
         - swaylock
         - swaybg

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${1:-}" == "--check" ]]; then
+    command -v walker >/dev/null 2>&1 || {
+        printf 'Walker is not installed.\n' >&2
+        exit 1
+    }
+    printf 'Walker launcher is available.\n'
+    exit 0
+fi
+
+if (($# > 0)); then
+    printf 'Usage: %s [--check]\n' "$0" >&2
+    exit 2
+fi
+
+command -v walker >/dev/null 2>&1 || {
+    printf 'Walker is not installed.\n' >&2
+    exit 1
+}
+exec walker

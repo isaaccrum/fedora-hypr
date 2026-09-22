@@ -2,8 +2,8 @@
 
 A BlueBuild Fedora Atomic image based on Wayblue Hyprland, with an
 Omarchy-inspired keyboard workflow and a recoverable desktop configuration.
-Foot is the standard terminal; Yazi is the default file manager. Waybar remains
-the active bar; Quickshell is installed for future work but is not started.
+Foot is the standard terminal; Yazi is the default file manager. Quickshell is
+the default shell; Waybar remains the explicit recovery fallback.
 
 Phase 1 builds, boots, rebases, and OS rollback have been tested on hardware.
 See [PHASES.md](PHASES.md) for milestones and the remaining desktop acceptance
@@ -56,9 +56,13 @@ updates Hyprland active/inactive border colors at runtime. The Hyprland palette
 is loaded by the explicit Hypratomic profile and remains reversible with
 `hypratomic-restore`.
 
-Quickshell remains opt-in. Run `hypratomic-quickshell --check` and then
-`hypratomic-quickshell` to preview the Phase 4 bar alongside Waybar; it never
-starts automatically.
+Quickshell is now the default shell and starts from `hypratomic-session`.
+`hypratomic-quickshell --check` verifies its managed configuration, while
+`hypratomic-session --waybar` provides the explicit recovery fallback. Walker is
+the application launcher; `hypratomic-launcher --check` verifies it. The
+notification server remains separately opt-in during testing with
+`hypratomic-quickshell --notifications`. The bar's Power button opens the
+Walker session menu; check it with `hypratomic-power-menu --check`.
 
 ## Build and test
 
@@ -170,7 +174,7 @@ Application overrides load before bindings; monitor settings stay user-owned;
 | Super+Return | Foot |
 | Super+Shift+Return or Super+Shift+B | Vivaldi Flatpak |
 | Super+Shift+F | Yazi in Foot |
-| Super+Space | Wofi application launcher |
+| Super+Space | Walker application launcher |
 | Super+K | Live Hyprland keybind list |
 | Super+Shift+W | Blacklist the current wallpaper and choose another |
 | Ctrl+Super+K | Tmux keybind list |
@@ -192,11 +196,11 @@ cancellation leaves the clipboard unchanged.
 The keybind viewer is provided by `hypratomic-keybinds`. The Hyprland view reads
 the compositor's live binding registry, so user-added bindings appear after a
 reload. The Tmux view reads the active Tmux key table; start Tmux first for the
-complete configured list. Both views use Wofi and close without changing focus
+complete configured list. Both views use Walker and close without changing focus
 or configuration.
 
 The session helper retains Wayblue's D-Bus environment, keyring, wallet, polkit,
-network applet, Waybar, and `/usr/share/swayidle/config` behavior. Existing matching
+network applet, Quickshell, and `/usr/share/swayidle/config` behavior. Existing matching
 daemons are not started again. Wayblue's idle policy controls locking, display
 power, and suspend. Notification/portal activation remains with the base image.
 The recipe explicitly installs `swayidle`, `swaylock`, and `gnome-keyring` for
