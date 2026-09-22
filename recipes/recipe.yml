@@ -32,6 +32,12 @@ modules:
         - walker
         - elephant
         - distrobox
+        # Explicit rootless container runtime and helpers. Per-user subuid and
+        # subgid ranges are configured on the deployed host.
+        - podman
+        - fuse-overlayfs
+        - slirp4netns
+        - shadow-utils-subid
         - foot
         - tmux
         - neovim
@@ -59,6 +65,11 @@ modules:
         - kitty-kitten
         - kitty-shell-integration
         - kitty-terminfo
+        # Walker is the managed launcher; neither inherited launcher is used
+        # by the Hypratomic session or Waybar fallback.
+        - wofi
+        - rofi
+        - rofi-themes
         # example: removing firefox (in favor of the flatpak)
         # "firefox" is the main package, "firefox-langpacks" is a dependency
         - firefox

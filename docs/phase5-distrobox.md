@@ -4,6 +4,13 @@ The host image includes Distrobox and the editor/multiplexer workflow, but it
 does not include language toolchains or native build dependencies. The managed
 manifest provides two starting points:
 
+Podman is an explicit host dependency and runs rootlessly as the logged-in user.
+Before creating the first environment, confirm that the account has entries in
+`/etc/subuid` and `/etc/subgid`; then run `podman info` and a disposable
+`podman run --rm quay.io/podman/hello`. `hypratomic-doctor` reports missing
+subordinate ranges as a warning because those ranges belong to the deployed
+machine rather than the image.
+
 ```bash
 hypratomic-devbox create rust
 hypratomic-devbox enter rust

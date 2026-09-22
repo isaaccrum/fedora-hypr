@@ -47,6 +47,19 @@ check_cmd hypratomic-theme 'Theme installer'
 check_cmd hypratomic-wallpaper 'Wallpaper helper'
 check_cmd distrobox 'Distrobox'
 check_cmd hypratomic-devbox 'Distrobox environment helper'
+check_cmd podman 'Rootless Podman'
+if command -v podman >/dev/null 2>&1 && (( EUID != 0 )); then
+    podman_rootless_user="$(id -un)"
+    if [[ -r /etc/subuid && -r /etc/subgid ]] \
+        && grep -q "^${podman_rootless_user}:" /etc/subuid \
+        && grep -q "^${podman_rootless_user}:" /etc/subgid; then
+        printf '[ OK ] %-30s configured for %s\n' 'Rootless UID/GID ranges' "$podman_rootless_user"
+    else
+        printf '[WARN] %-30s configure /etc/subuid and /etc/subgid for %s\n' \
+            'Rootless UID/GID ranges' "$podman_rootless_user"
+        warnings=$((warnings + 1))
+    fi
+fi
 check_cmd waybar 'Waybar fallback'
 check_optional hyprctl 'hyprctl'
 check_cmd walker 'Walker launcher'

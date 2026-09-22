@@ -263,6 +263,32 @@ environments isolate dependencies; shared-home containers and dev shells are not
 assumed to be security sandboxes. Verify deletion/recreation without losing source
 files, and document first-use downloads and offline limits.
 
+### Host package policy and rootless containers
+
+The host image keeps the desktop runtime and small interactive tools that are
+useful everywhere. Project compilers, SDKs, language servers, and build stacks
+belong in Distrobox environments so the OS remains small and rebuildable. The
+current image intentionally removes Kitty and Firefox packages, while retaining
+Wayblue's fallback desktop utilities until their replacement paths have been
+validated on hardware. Walker is the Hypratomic launcher; Waybar remains the
+recovery shell.
+
+Podman is installed explicitly with its rootless networking and overlay helpers.
+It is intended to run as the logged-in user, without a Podman system service or
+root privileges. A deployed account needs subordinate UID/GID ranges in
+`/etc/subuid` and `/etc/subgid`; configure those once on the host if they are
+missing, then verify with:
+
+```bash
+podman info --format '{{.Host.Security.Rootless}}'
+podman run --rm quay.io/podman/hello
+hypratomic-doctor
+```
+
+The image cannot safely invent per-user subordinate ranges during deployment.
+Podman containers and Distrobox environments are development layers, separate
+from the immutable OS and from user-file backup policy.
+
 ### AI inside Neovim/LazyVim
 
 Aim for a Zed-like threads/agents experience inside the editor: multiple

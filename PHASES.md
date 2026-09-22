@@ -154,6 +154,10 @@ Status: started. Distrobox is selected as the default environment manager; Rust
 and TypeScript/JavaScript starting profiles are installed outside the host image.
 See [the Distrobox workflow](docs/phase5-distrobox.md).
 
+The host package review keeps the image focused on desktop runtime needs. Podman
+is installed explicitly with rootless support packages; subordinate UID/GID
+ranges remain deployment-specific and are checked by `hypratomic-doctor`.
+
 Goal: a short path from cloning a project to a working Rust or
 TypeScript/JavaScript development environment without per-project host layering.
 
