@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+manifest=/usr/share/hypratomic/devboxes/distrobox.ini
+
+usage() {
+    printf 'Usage: %s {list|create|enter|remove} {rust|typescript} [command ...]\n' "$0" >&2
+    exit 2
+}
+
+[[ -r "$manifest" ]] || {
+    printf 'Missing Distrobox manifest: %s\n' "$manifest" >&2
+    exit 1
+}
+command -v distrobox >/dev/null 2>&1 || {
+    printf 'Distrobox is not installed.\n' >&2
+    exit 1
+}
+
+action="${1:-}"
+profile="${2:-}"
+case "$action" in
+    list)
+        (($# == 1)) || usage
+        exec distrobox list
+        ;;
+    create|enter|remove)
+        [[ "$profile" == rust || "$profile" == typescript ]] || usage
+        (($# >= 2)) || usage
+        name="hypratomic-$profile"
+        ;;
+    *)
+        usage
+        ;;
+esac
+
+case "$action" in
+    create)
+        (($# == 2)) || usage
+        exec distrobox assemble create --file "$manifest" --name "$name"
+        ;;
+    enter)
+        if (($# == 2)); then
+            exec distrobox enter "$name"
+        fi
+        shift 2
+        exec distrobox enter "$name" -- "$@"
+        ;;
+    remove)
+        (($# == 2)) || usage
+        exec distrobox assemble rm --file "$manifest" --name "$name"
+        ;;
+esac

@@ -126,8 +126,11 @@ remaining native to Fedora.
 
 ## Phase 4 — Quickshell / Quattro-style shell
 
-Status: started. Quickshell is now the default shell with Walker launcher,
-notification toast, and power/session menu; OSD remains.
+Status: complete on 2026-09-21. Quickshell is the default shell with Walker
+launcher, notification toast, power/session menu, and an explicit Waybar fallback.
+Hardware validation remains a user acceptance check; OSD remains intentionally
+owned by the existing media/brightness bindings until a stable upstream API is
+selected.
 
 Goal: replace the collection of small desktop daemons with a coherent shell.
 
@@ -143,18 +146,19 @@ Goal: replace the collection of small desktop daemons with a coherent shell.
   surfaces.
 
 Exit criterion: Quickshell is the normal daily shell and Waybar remains an
-available emergency fallback.
+available emergency fallback. Met; OSD is tracked as a later enhancement.
 
 ## Phase 5 — Rebuildable project environments
 
-Status: planned; environment manager not yet selected.
+Status: started. Distrobox is selected as the default environment manager; Rust
+and TypeScript/JavaScript starting profiles are installed outside the host image.
+See [the Distrobox workflow](docs/phase5-distrobox.md).
 
 Goal: a short path from cloning a project to a working Rust or
 TypeScript/JavaScript development environment without per-project host layering.
 
-- Evaluate Toolbx/Distrobox/devcontainers, DevPod (`devpod.sh`), and optional
-  Nix flakes/dev shells; select one simple default with an explicit
-  Atomic-compatible setup/removal path.
+- Keep Distrobox as the initial default; evaluate DevPod (`devpod.sh`) and
+  optional Nix flakes/dev shells only when a project needs their workflow.
 - Supply project templates with toolchain versions, image digests or flake locks,
   dependency locks, service definitions where needed, and build/test commands.
 - Resolve editor/LSP/formatter/debugger placement and ensure agent commands run

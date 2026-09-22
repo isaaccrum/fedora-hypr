@@ -243,14 +243,16 @@ unbind/rebind procedure.
 
 ### Reproducible project environments
 
-Provide a short, documented path from cloning a repository to opening its editor,
-running tests, and rebuilding its environment. Start with Rust and
-TypeScript/JavaScript templates. Evaluate [Toolbx](https://containertoolbx.org/)
-and Distrobox/devcontainers for container-based toolchains, and optional
-[Nix flakes/dev shells](https://nix.dev/concepts/flakes.html) for locked tool versions.
-Choose one straightforward default; do not require several environment managers
-for every project. Nix integration with Atomic storage and updates must be tested
-before adoption.
+Use Distrobox as the initial project-environment manager. The host image includes
+the `distrobox` runtime and `hypratomic-devbox`, while compilers, Cargo, Rust,
+Node.js, npm, and native build dependencies stay in the containers. Create a
+starting environment with `hypratomic-devbox create rust` or
+`hypratomic-devbox create typescript`, then enter it with the matching command.
+See [the Phase 5 workflow](docs/phase5-distrobox.md).
+
+Evaluate DevPod (`devpod.sh`) and optional [Nix flakes/dev shells](https://nix.dev/concepts/flakes.html)
+only when Distrobox cannot meet a project's needs; do not require several
+environment managers for every project.
 
 Definitions belong with the project: base-image digests or flake locks, language
 versions, dependency lockfiles, build/test commands, and any service dependencies.
