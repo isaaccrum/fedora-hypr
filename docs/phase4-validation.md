@@ -7,10 +7,20 @@ Quickshell starts automatically from `hypratomic-session`. Run
 helper copies the managed shell to `~/.config/quickshell/hypratomic/shell.qml`
 only when that file is absent, preserving user changes.
 
+The session helper owns only the long-lived processes it starts. Ownership
+records live under `$XDG_RUNTIME_DIR/hypratomic-session`; one-shot D-Bus, keyring,
+and wallet setup is reported separately. Re-running the helper reconciles the
+requested shell without stopping unrelated user processes. Inspect the plan
+without starting anything with `hypratomic-session --plan`.
+
 Waybar remains available as an explicit fallback with
 `hypratomic-session --waybar` from a recovery shell inside the graphical user
 session. Use a TTY to restore the Hyprland configuration, then log in and invoke
 the fallback session.
+
+The fallback stops only a Hypratomic-owned Quickshell process. It keeps Elephant
+running so Walker remains available. An unowned conflicting shell is reported
+and prevents a second visible shell from starting.
 
 The notification server is separately opt-in during testing:
 

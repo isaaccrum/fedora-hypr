@@ -5,6 +5,8 @@ set -euo pipefail
 for name in bootstrap activate restore doctor session clipboard screenshot coding-bootstrap keybinds theme wallpaper quickshell launcher power-menu devbox; do
     test -x "/usr/bin/hypratomic-$name"
 done
+plan_output="$(/usr/bin/hypratomic-session --plan)"
+grep -q '^Shell: owned quickshell process' <<<"$plan_output"
 test -f /usr/libexec/hypratomic/config.py
 for module in hyprland environment monitors input autostart keybinds look-and-feel palette windowrules user; do
     test -r "/usr/share/hypratomic/hypr/$module.lua"

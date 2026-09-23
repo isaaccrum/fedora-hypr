@@ -66,6 +66,20 @@ Use concise, action-oriented subjects; history also uses `chore(deps):` and `cho
 - Keep user-file synchronization and backup independent of OS/configuration rollback. Evaluate self-hosted Seafile/SeaDrive or Nextcloud for Linux files-on-demand, offline pinning, and background sync; verify actual Fedora Atomic and CLI/editor behavior before promising support. Require independent versioned backups, retention and key-recovery procedures, and client/server restore tests. Do not treat sync, virtual-file placeholders, or Git commits alone as a complete backup of user work.
 - Keep active worktrees local until virtual-drive semantics are validated. Preserve source files and uncommitted work; exclude rebuildable dependencies, build outputs, model caches, and container layers from default backup sets. Keep proposed tooling clearly marked as planned until implemented and validated; milestone status belongs in PHASES.md.
 
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live in GitHub Issues; use the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the default `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix` labels. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+This is a single-context repository. Read `CONTEXT.md` and relevant ADRs under `docs/adr/`. See `docs/agents/domain.md`.
+
 ## Signing
 
 Never commit private signing keys; CI currently reads `SIGNING_SECRET`, and `cosign.pub` is public.

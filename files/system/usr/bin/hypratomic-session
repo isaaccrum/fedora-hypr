@@ -1,49 +1,187 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Invoked once by Hyprland, never by image installation or activation.
-# Match Wayblue's session integration without starting another compositor shell.
-: "${XDG_RUNTIME_DIR:?A graphical user session is required}"
-exec 9>"$XDG_RUNTIME_DIR/hypratomic-session.lock"
-flock -n 9 || exit 0
+# One login-time session plan. The plan owns only long-lived processes it
+# starts; D-Bus, keyring, and wallet setup remain one-shot external calls.
 uid="$(id -u)"
 
-shell="quickshell"
-if [[ "${1:-}" == "--waybar" ]]; then
-    shell="waybar"
+mode=quickshell
+if [[ "${1:-}" == '--waybar' ]]; then
+    mode=waybar
+elif [[ "${1:-}" == '--plan' ]]; then
+    printf '%s\n' \
+        'D-Bus environment: optional one-shot' \
+        'Keyring and wallet: optional one-shot' \
+        'Elephant: owned optional process' \
+        "Shell: owned ${mode} process (Quickshell or Waybar)" \
+        'Polkit, NetworkManager, swayidle, clipboard watchers: owned optional processes'
+    exit 0
 elif (($# > 0)); then
-    printf 'Usage: %s [--waybar]\n' "$0" >&2
+    printf 'Usage: %s [--waybar|--plan]\n' "$0" >&2
     exit 2
 fi
 
-start_once() {
-    local process="$1"
-    shift
-    if ! pgrep -u "$uid" -x "$process" >/dev/null; then
-        "$@" 9>&- &
+: "${XDG_RUNTIME_DIR:?A graphical user session is required}"
+runtime_state="$XDG_RUNTIME_DIR/hypratomic-session"
+mkdir -p "$runtime_state"
+chmod 700 "$runtime_state"
+exec 9>"$runtime_state/session.lock"
+flock -n 9 || exit 0
+
+pgrep_cmd="${HYPRATOMIC_PGREP:-pgrep}"
+kill_cmd="${HYPRATOMIC_KILL:-kill}"
+sleep_cmd="${HYPRATOMIC_SLEEP:-sleep}"
+dbus_update="${HYPRATOMIC_DBUS_UPDATE:-dbus-update-activation-environment}"
+keyring="${HYPRATOMIC_KEYRING:-/usr/bin/gnome-keyring-daemon}"
+kwallet="${HYPRATOMIC_KWALLET:-/usr/libexec/pam_kwallet_init}"
+polkit="${HYPRATOMIC_POLKIT:-/usr/libexec/xfce-polkit}"
+swayidle_config="${HYPRATOMIC_SWAYIDLE_CONFIG:-/usr/share/swayidle/config}"
+
+optional_failures=0
+shell_failure=0
+
+pid_file() { printf '%s/%s.pid' "$runtime_state" "$1"; }
+
+owned_process_matches() {
+    local name="$1" pid="$2" comm expected
+    [[ -r "/proc/$pid/comm" ]] || return 1
+    comm="$(<"/proc/$pid/comm")"
+    case "$name" in
+        quickshell) expected='quickshell|qs' ;;
+        waybar) expected='waybar' ;;
+        elephant) expected='elephant' ;;
+        polkit) expected='xfce-polkit' ;;
+        network-applet) expected='nm-applet' ;;
+        swayidle) expected='swayidle' ;;
+        clipboard-*) expected='wl-paste' ;;
+        *) return 1 ;;
+    esac
+    [[ "$comm" =~ ^($expected)$ ]]
+}
+
+owned_pid() {
+    local name="$1" pid
+    [[ -r "$(pid_file "$name")" ]] || return 1
+    read -r pid < "$(pid_file "$name")" || return 1
+    [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+    if "$kill_cmd" -0 "$pid" 2>/dev/null && owned_process_matches "$name" "$pid"; then
+        printf '%s\n' "$pid"
+        return 0
+    fi
+    rm -f -- "$(pid_file "$name")"
+    return 1
+}
+
+matching_process() {
+    local process
+    for process in "$@"; do
+        if "$pgrep_cmd" -u "$uid" -x "$process" >/dev/null 2>&1; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+stop_owned() {
+    local name="$1" pid
+    pid="$(owned_pid "$name")" || return 0
+    "$kill_cmd" "$pid" 2>/dev/null || true
+    rm -f -- "$(pid_file "$name")"
+}
+
+start_owned() {
+    local name="$1" process="$2" command="$3"
+    shift 3
+    if owned_pid "$name" >/dev/null; then
+        return 0
+    fi
+    if matching_process "$process" "$@"; then
+        printf '[INFO] Preserving unowned process for %s\n' "$name"
+        return 0
+    fi
+    if ! command -v "$command" >/dev/null 2>&1 && [[ ! -x "$command" ]]; then
+        printf '[WARN] Missing command for %s: %s\n' "$name" "$command" >&2
+        return 1
+    fi
+    "$command" "$@" 9>&- &
+    local pid="$!"
+    printf '%s\n' "$pid" > "$(pid_file "$name")"
+    "$sleep_cmd" 0.05
+    if ! "$kill_cmd" -0 "$pid" 2>/dev/null; then
+        rm -f -- "$(pid_file "$name")"
+        return 1
     fi
 }
 
-# A wallet failure must not prevent the bar, polkit agent, or idle lock starting.
-dbus-update-activation-environment --systemd --all || printf 'Could not import session environment\n' >&2
-/usr/bin/gnome-keyring-daemon --start --components=secrets || printf 'Could not start keyring\n' >&2
-/usr/libexec/pam_kwallet_init || printf 'Could not initialize wallet\n' >&2
-if [[ "$shell" == quickshell ]]; then
-    start_once elephant elephant
-    start_once quickshell hypratomic-quickshell
-else
-    pkill -u "$uid" -x quickshell 2>/dev/null || true
-    pkill -u "$uid" -x qs 2>/dev/null || true
-    start_once waybar waybar
-fi
-start_once xfce-polkit /usr/libexec/xfce-polkit
-start_once nm-applet nm-applet
-# Includes lock-on-idle, before-sleep, loginctl lock-session, and DPMS handling.
-start_once swayidle swayidle -w -C /usr/share/swayidle/config
-
-# Text and image watchers have distinct commands. Re-entry must not duplicate them.
-for kind in text image; do
-    if ! pgrep -u "$uid" -f "^wl-paste --type $kind --watch cliphist store$" >/dev/null; then
-        wl-paste --type "$kind" --watch cliphist store 9>&- &
+start_optional() {
+    local name="$1" process="$2" command="$3"
+    shift 3
+    if ! start_owned "$name" "$process" "$command" "$@"; then
+        printf '[WARN] Could not start %s\n' "$name" >&2
+        optional_failures=$((optional_failures + 1))
     fi
+}
+
+reconcile_shell() {
+    local requested_process command conflicting_process
+    if [[ "$mode" == quickshell ]]; then
+        requested_process=quickshell
+        command=hypratomic-quickshell
+        conflicting_process=waybar
+        stop_owned waybar
+    else
+        requested_process=waybar
+        command=waybar
+        conflicting_process=quickshell
+        stop_owned quickshell
+    fi
+    if matching_process "$conflicting_process" || \
+       { [[ "$conflicting_process" == quickshell ]] && matching_process qs; }; then
+        printf '[FAIL] An unowned conflicting shell is already running: %s\n' "$conflicting_process" >&2
+        shell_failure=1
+        return
+    fi
+    if [[ "$requested_process" == quickshell ]]; then
+        if matching_process qs; then
+            printf '[INFO] Preserving unowned process for quickshell\n'
+        elif ! start_owned quickshell quickshell "$command"; then
+            printf '[FAIL] Could not start Quickshell\n' >&2
+            shell_failure=1
+        fi
+    elif ! start_owned waybar waybar "$command"; then
+        printf '[FAIL] Could not start Waybar\n' >&2
+        shell_failure=1
+    fi
+}
+
+exec_one_shot() {
+    local label="$1" command="$2"
+    shift 2
+    if ! "$command" "$@"; then
+        printf '[WARN] Could not initialize %s\n' "$label" >&2
+        optional_failures=$((optional_failures + 1))
+    fi
+}
+
+exec_one_shot 'D-Bus environment' "$dbus_update" --systemd --all
+exec_one_shot 'keyring' "$keyring" --start --components=secrets
+exec_one_shot 'wallet' "$kwallet"
+
+# Elephant supports Walker in both Quickshell and Waybar modes.
+start_optional elephant elephant elephant
+reconcile_shell
+start_optional polkit xfce-polkit "$polkit"
+start_optional network-applet nm-applet nm-applet
+start_optional swayidle swayidle swayidle -w -C "$swayidle_config"
+
+for kind in text image; do
+    watcher="clipboard-$kind"
+    start_optional "$watcher" wl-paste wl-paste --type "$kind" --watch cliphist store
 done
+
+if (( shell_failure > 0 )); then
+    exit 1
+fi
+if (( optional_failures > 0 )); then
+    printf '[WARN] Session started with %d optional failure(s)\n' "$optional_failures" >&2
+fi
