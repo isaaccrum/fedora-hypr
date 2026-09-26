@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# This helper runs as root on an installed image before SDDM.  It is deliberately
+# interactive: an image installed without an account must stop at a local TTY
+# instead of presenting an unusable graphical login screen.
+
+if [[ ${EUID} -ne 0 && ${HYPRATOMIC_ALLOW_NONROOT_TEST:-0} != 1 ]]; then
+    echo "hypratomic-firstboot-user must run as root" >&2
+    exit 1
+fi
+
+PASSWD_FILE=${HYPRATOMIC_PASSWD_FILE:-/etc/passwd}
+GROUP_FILE=${HYPRATOMIC_GROUP_FILE:-/etc/group}
+STATE_DIR=${HYPRATOMIC_STATE_DIR:-/var/lib/hypratomic}
+MARKER=${HYPRATOMIC_FIRSTBOOT_MARKER:-$STATE_DIR/firstboot-user.done}
+USERADD=${HYPRATOMIC_USERADD:-/usr/sbin/useradd}
+CHPASS=${HYPRATOMIC_CHPASS:-/usr/sbin/chpasswd}
+USERDEL=${HYPRATOMIC_USERDEL:-/usr/sbin/userdel}
+INPUT=${HYPRATOMIC_INPUT:-/dev/tty}
+OUTPUT=${HYPRATOMIC_OUTPUT:-/dev/tty}
+
+has_admin() {
+    local wheel_members name _ uid _ _ _ shell
+    wheel_members=$(awk -F: '$1 == "wheel" { print $4 }' "$GROUP_FILE" 2>/dev/null || true)
+    [[ -n "$wheel_members" ]] || return 1
+
+    while IFS=: read -r name _ uid _ _ _ shell; do
+        [[ "$uid" =~ ^[0-9]+$ && "$uid" -ge 1000 ]] || continue
+        [[ "$shell" != */nologin && "$shell" != */false ]] || continue
+        case ",$wheel_members," in
+            *,"$name",*) return 0 ;;
+        esac
+    done < "$PASSWD_FILE"
+    return 1
+}
+
+user_exists() {
+    awk -F: -v wanted="$1" '$1 == wanted { found = 1 } END { exit !found }' "$PASSWD_FILE"
+}
+
+valid_username() {
+    [[ "$1" =~ ^[a-z_][a-z0-9_-]{0,31}\$?$ && "$1" != root ]]
+}
+
+if has_admin; then
+    mkdir -p "$STATE_DIR"
+    : > "$MARKER"
+    exit 0
+fi
+
+mkdir -p "$STATE_DIR"
+exec 3< "$INPUT"
+exec 4> "$OUTPUT"
+
+printf '\nHypratomic first boot setup\n' >&4
+printf 'No local administrator account was found. Create one now.\n\n' >&4
+printf 'Login name: ' >&4
+IFS= read -r username <&3 || exit 1
+if ! valid_username "$username"; then
+    printf 'Invalid login name. Use 1-32 lowercase letters, numbers, _ or -.\n' >&4
+    exit 1
+fi
+if user_exists "$username"; then
+    printf 'That login name already exists; choose another.\n' >&4
+    exit 1
+fi
+
+printf 'Full name (optional): ' >&4
+IFS= read -r full_name <&3 || exit 1
+printf 'Password: ' >&4
+IFS= read -r -s password <&3 || exit 1
+printf '\nConfirm password: ' >&4
+IFS= read -r -s password_again <&3 || exit 1
+printf '\n' >&4
+if [[ -z "$password" || "$password" != "$password_again" ]]; then
+    printf 'Passwords were empty or did not match.\n' >&4
+    exit 1
+fi
+
+if [[ -n "$full_name" ]]; then
+    "$USERADD" --create-home --shell /bin/bash --groups wheel --comment "$full_name" "$username"
+else
+    "$USERADD" --create-home --shell /bin/bash --groups wheel "$username"
+fi
+
+if ! printf '%s:%s\n' "$username" "$password" | "$CHPASS"; then
+    printf 'Setting the password failed; removing the incomplete account.\n' >&4
+    "$USERDEL" --remove "$username" || true
+    exit 1
+fi
+
+: > "$MARKER"
+chmod 600 "$MARKER"
+printf 'Created %s with sudo access through the wheel group. Continuing to SDDM.\n' "$username" >&4
+exit 0

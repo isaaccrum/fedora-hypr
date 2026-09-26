@@ -33,6 +33,9 @@ Goal: prove the custom image is boring and recoverable.
 - Verify two successful boots.
 - Verify `rpm-ostree rollback` before customizing the desktop.
 - Run `hypratomic-doctor`.
+- On a fresh ISO install with no account, verify the first-boot tty wizard creates
+  a wheel administrator before SDDM starts; verify an existing administrator
+  skips the wizard.
 
 Exit criterion: you would be comfortable using this image for a week even if
 we stopped the project here.

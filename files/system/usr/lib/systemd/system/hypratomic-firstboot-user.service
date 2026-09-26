@@ -1,0 +1,20 @@
+[Unit]
+Description=Create the first Hypratomic administrator account
+Documentation=https://github.com/isaacrum/hypratomic
+After=local-fs.target systemd-tmpfiles-setup.service
+Before=display-manager.service graphical.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/hypratomic-firstboot-user
+StandardInput=tty
+StandardOutput=tty
+StandardError=tty
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

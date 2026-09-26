@@ -28,6 +28,7 @@ modules:
       cleanup: true
     install:
       packages:
+        - starship
         - quickshell
         - walker
         - elephant
@@ -38,6 +39,7 @@ modules:
         - fuse-overlayfs
         - slirp4netns
         - shadow-utils-subid
+        - sudo # wheel policy supplies administrator access for the first account
         - foot
         - tmux
         - neovim

@@ -40,6 +40,18 @@ are planned. Host-image work proceeds through the visual and shell phases before
 project environments are added as a separate user-space layer. See
 [PHASES.md](PHASES.md) for acceptance criteria and status.
 
+## First boot after an ISO install
+
+The image includes `hypratomic-firstboot-user.service`. If the installed system
+has no non-root administrator, it runs on tty1 before SDDM and prompts for a
+login name, full name, and password. The new account is placed in Fedora's
+`wheel` group, which grants sudo access, and the service records completion under
+`/var/lib/hypratomic/`. SDDM is ordered after this service so an unconfigured
+install cannot strand you at a login screen with no usable account. If an
+administrator already exists, the service exits immediately. A failed or
+cancelled setup leaves SDDM blocked; switch to a virtual console and rerun the
+setup after correcting the input.
+
 Phase 3 starts with one restrained dark palette shared by Hyprland, Foot, and GTK.
 The image includes JetBrains Mono and Cascadia Mono Nerd Font for coding and symbols.
 Run `hypratomic-theme` once as your user to install missing Foot and GTK fragments;
