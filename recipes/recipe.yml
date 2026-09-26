@@ -28,7 +28,6 @@ modules:
       cleanup: true
     install:
       packages:
-        - starship
         - quickshell
         - walker
         - elephant
