@@ -49,6 +49,7 @@ ShellRoot {
             implicitHeight: 34
             color: "transparent"
             exclusionMode: ExclusionMode.Normal
+	    exclusiveZone: 30
 
             Rectangle {
                 anchors.fill: parent
